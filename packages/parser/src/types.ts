@@ -1,4 +1,5 @@
 import type { DraftIssueCode, DraftItem } from "@ra/core";
+import type { Remark } from "./remarks";
 
 /** Ce que l'extracteur renvoie pour une phrase de l'utilisateur. */
 export type ParsedUtterance =
@@ -18,6 +19,8 @@ export interface AddUtterance {
   /** Prix global de plusieurs articles (« une baguette et deux croissants pour 3,40 »). */
   totalPaidCents: number | null;
   issues: ParsedIssue[];
+  /** Commentaire libre (« elle est trop chère »), auquel l'assistant répond. */
+  remark: Remark | null;
 }
 
 /** « Non, la baguette c'était 1,10 » / « En fait, c'était trois croissants » */

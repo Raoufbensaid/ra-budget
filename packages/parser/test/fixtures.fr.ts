@@ -77,6 +77,7 @@ function add(
     date: null,
     totalPaidCents: null,
     issues: [] as ParsedIssue[],
+    remark: null,
     ...extra,
   };
 }

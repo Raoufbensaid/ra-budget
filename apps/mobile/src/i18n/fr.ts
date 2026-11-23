@@ -1,0 +1,122 @@
+export const fr = {
+  expense: {
+    title: "Nouvelle dépense",
+    today: "Aujourd'hui",
+    yesterday: "Hier",
+    welcome:
+      "Salut ! Dis-moi ce que tu as acheté, comme tu le raconterais à un ami. Par exemple : « une baguette à 1,20 et deux croissants chez Paul ».",
+    placeholder: "Ex. : 2 croissants à 1,10",
+    listening: "Je t'écoute…",
+    send: "Envoyer",
+    mic: "Dicter",
+    stopMic: "Arrêter la dictée",
+    undo: "Annuler",
+    cart: "Panier",
+    cartEmpty: "Tes articles apparaîtront ici.",
+    items_one: "{{count}} article",
+    items_other: "{{count}} articles",
+    total: "Total",
+    paid: "Payé",
+    priceMissing: "Prix ?",
+    each: "{{price}} / unité",
+    perKilo: "{{price}} / kg",
+    perLitre: "{{price}} / l",
+    toClassify: "À classer",
+    grouped: "Payés ensemble",
+    included: "inclus",
+    priceToConfirm: "À préciser",
+    remove: "Retirer {{name}}",
+    validate: "Valider la dépense",
+    showCart: "Voir le panier",
+    hideCart: "Masquer le panier",
+    suggestion: "Compléter avec {{name}}",
+  },
+  assistant: {
+    added: "C'est noté : {{items}}.",
+    updated: "C'est noté.",
+    removed: "J'ai retiré {{name}}.",
+    total: "Total payé : {{price}}.",
+    context: "Noté : {{context}}.",
+    notFound: "Je ne trouve pas « {{target}} » dans ton panier.",
+    notUnderstood:
+      "Je n'ai pas compris. Essaie par exemple : « 2 croissants à 1,10 » ou « enlève la baguette ».",
+    undone: "J'ai annulé le dernier changement.",
+    nothingToUndo: "Il n'y a rien à annuler.",
+    mismatch: "Attention : tu as payé {{declared}}, mais tes articles font {{items}}.",
+    complete: "Tout est complet ! Ajoute d'autres articles ou valide ta dépense.",
+    askPrice: "Tu as payé combien pour « {{item}} » ?",
+    askScopeUnit: "{{price}} pour « {{item}} » : c'est le prix de chacun, ou le total ?",
+    askScopeMeasure: "{{price}} pour « {{item}} » : c'est le prix au {{per}}, ou le total ?",
+    askCategory: "Je ne connais pas « {{name}} ». Dans quelle catégorie je le range ?",
+    chipEach: "Chacun",
+    chipPer: "Au {{per}}",
+    chipTotal: "Le total",
+    kilo: "kilo",
+    litre: "litre",
+    at: "chez {{merchant}}",
+  },
+  priceInfo: {
+    known: [
+      "En moyenne, compte environ {{ref}} pour « {{name}} ». Ça peut varier selon le magasin et la région.",
+      "Pour « {{name}} », le prix habituel tourne autour de {{ref}}. Les boulangeries et les supermarchés peuvent être un peu au-dessus ou en dessous.",
+    ],
+    unknownPrice:
+      "Je n'ai pas encore de prix moyen pour « {{name}} ». Dis-moi ce que tu l'as payé, je le noterai.",
+    unknownProduct:
+      "Je ne connais pas encore le prix moyen de ce produit. Pour l'instant, je connais surtout les courses du quotidien : pain, fruits, légumes, carburant…",
+  },
+  remark: {
+    perKilo: "le kilo",
+    perLitre: "le litre",
+    expensive_above: [
+      "C'est vrai que c'est cher : le prix moyen tourne plutôt autour de {{ref}}. Jette un œil aux commerces autour de chez toi, tu trouveras sûrement moins cher.",
+      "Effectivement, c'est au-dessus de la moyenne (environ {{ref}}). Compare avec un autre magasin la prochaine fois, ça peut vite faire la différence.",
+      "Tu as raison, c'est un peu cher : le prix habituel tourne autour de {{ref}}. Les marques distributeur ou un autre commerce peuvent t'aider à payer moins.",
+    ],
+    expensive_normal: [
+      "Je te comprends, mais c'est à peu près le prix habituel : autour de {{ref}} en moyenne.",
+      "Les prix ont bien grimpé… Mais là, tu es dans la moyenne (environ {{ref}}).",
+    ],
+    expensive_below: [
+      "Bonne nouvelle : c'est même un peu moins cher que la moyenne (environ {{ref}}).",
+      "Rassure-toi, tu as payé moins que le prix moyen, qui tourne autour de {{ref}}.",
+    ],
+    expensive_none: [
+      "Les prix ont bien augmenté… Compare avec d'autres magasins la prochaine fois, ça peut vite faire une différence.",
+      "Je note ! Si c'est un achat régulier, ça vaut le coup de comparer les prix autour de toi.",
+    ],
+    cheap_below: [
+      "Bien joué ! C'est en dessous du prix moyen, qui tourne autour de {{ref}}.",
+      "Belle affaire : le prix habituel est plutôt d'environ {{ref}}.",
+    ],
+    cheap_normal: [
+      "C'est un prix correct, dans la moyenne (environ {{ref}}).",
+      "Oui, c'est un bon prix, proche de la moyenne (environ {{ref}}).",
+    ],
+    cheap_above: ["Hmm, c'est quand même un peu au-dessus de la moyenne (environ {{ref}})."],
+    cheap_none: [
+      "Bien joué, les bonnes affaires, ça compte !",
+      "Top ! Chaque petite économie compte pour ton budget.",
+    ],
+    liked: ["Tant mieux, ça fait plaisir !", "Super, content que ça t'ait plu !"],
+    liked_food: ["Tant mieux, bon appétit !", "Miam ! Content que ce soit bon."],
+    disliked: [
+      "Dommage… Pense à ne pas le reprendre la prochaine fois.",
+      "Pas de chance. Au moins, tu sais quoi éviter maintenant !",
+    ],
+    regret: [
+      "Ça arrive à tout le monde ! L'important, c'est de le noter.",
+      "Pas de panique : on garde un œil dessus avec ton budget.",
+    ],
+  },
+  done: {
+    title: "Dépense enregistrée",
+    subtitle: "{{count}} articles · {{total}}",
+    note: "Pour l'instant, tes dépenses restent sur cet écran : la sauvegarde arrive avec les comptes.",
+    again: "Ajouter une autre dépense",
+    session_one: "{{count}} dépense saisie pendant cette session",
+    session_other: "{{count}} dépenses saisies pendant cette session",
+  },
+};
+
+export type Messages = typeof fr;

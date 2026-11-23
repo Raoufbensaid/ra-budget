@@ -50,3 +50,12 @@ export function joinTokens(tokens: string[]): string {
 export function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/** Ponctuation retirée (décimales protégées) et « vingt et un » recollé en « vingt-et-un ». */
+export function prepareInput(input: string): string {
+  const cleaned = normalizeApostrophes(input)
+    .replace(/[?!:«»"()]/g, " ")
+    .replace(/(?<!\d)\.|\.(?!\d)/g, " ")
+    .replace(/(vingt|trente|quarante|cinquante|soixante)\s+et\s+(un|une|onze)/giu, "$1-et-$2");
+  return collapseSpaces(cleaned);
+}

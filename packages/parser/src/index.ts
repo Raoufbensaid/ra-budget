@@ -3,13 +3,22 @@
  * 100 % déterministe : aucune IA, aucun appel réseau. Les règles sont documentées
  * et testées dans `test/fixtures.fr.ts`.
  */
+
 import { parseCorrection, parseRemove, parseTotal } from "./commands";
 import { extractDate, extractMerchant } from "./context";
 import { parseSegment } from "./items";
-import { collapseSpaces, normalizeApostrophes, toKey, wordRegex } from "./text";
+import { detectRemark } from "./remarks";
+import { collapseSpaces, prepareInput, toKey, wordRegex } from "./text";
 import type { AddUtterance, ParsedIssue, ParsedItem, ParsedUtterance, ParseOptions } from "./types";
 
+export { suggestProducts } from "./dictionary";
+export { type PriceQuestion, parsePriceQuestion } from "./price-question";
+export { type ReferencePrice, referencePrice } from "./reference-prices";
+export { detectRemark, type Remark } from "./remarks";
+export { type AmountReply, type PriceScope, parseAmountReply, parseScopeReply } from "./replies";
+export { toKey } from "./text";
 export type * from "./types";
+export { priceQuantity } from "./units";
 
 /** Mots parasites retirés avant l'analyse (R11). */
 const FILLERS = [
@@ -33,18 +42,6 @@ const FILLERS = [
 /** Séparateurs d'articles (R7) ; la virgule décimale « 1,20 » est protégée. */
 const SEGMENT_SPLIT = /\s*(?:(?<!\d),|,(?!\d))\s*|\s+(?:et|plus|puis|ainsi que)\s+|\s*;\s*/u;
 
-function cleanPunctuation(s: string): string {
-  return s.replace(/[?!:«»"()]/g, " ").replace(/(?<!\d)\.|\.(?!\d)/g, " ");
-}
-
-/** « vingt et un » → « vingt-et-un », pour lire le nombre d'un seul mot. */
-function joinCompoundNumbers(s: string): string {
-  return s.replace(
-    /(vingt|trente|quarante|cinquante|soixante)\s+et\s+(un|une|onze)/giu,
-    "$1-et-$2",
-  );
-}
-
 function removeFillers(s: string): string {
   let out = s;
   for (const f of FILLERS) out = out.replace(wordRegex(f), " ");
@@ -52,7 +49,7 @@ function removeFillers(s: string): string {
 }
 
 export function parseUtterance(input: string, options: ParseOptions): ParsedUtterance {
-  const text = collapseSpaces(joinCompoundNumbers(cleanPunctuation(normalizeApostrophes(input))));
+  const text = prepareInput(input);
   if (!text) return { kind: "unknown" };
 
   const key = toKey(text);
@@ -92,6 +89,15 @@ export function parseUtterance(input: string, options: ParseOptions): ParsedUtte
     r.issues.map((code) => ({ code, itemIndex })),
   );
 
-  const result: AddUtterance = { kind: "add", items, merchant, date, totalPaidCents, issues };
+  const remark = detectRemark(input);
+  const result: AddUtterance = {
+    kind: "add",
+    items,
+    merchant,
+    date,
+    totalPaidCents,
+    issues,
+    remark,
+  };
   return result;
 }

@@ -222,3 +222,40 @@ export function lookupProduct(phrase: string, merchant: string | null): ProductM
 function find(key: string): ProductEntry | undefined {
   return INDEX.get(key) ?? INDEX.get(singularKey(key));
 }
+
+/** Formes proposées à l'auto-complétion : noms d'abord, puis synonymes. */
+const SUGGESTIONS: { key: string; label: string }[] = [
+  ...PRODUCTS.map((p) => ({ key: toKey(p.name), label: p.name })),
+  ...PRODUCTS.flatMap((p) => (p.aliases ?? []).map((a) => ({ key: toKey(a), label: a }))),
+];
+
+/**
+ * Produits qui commencent par le début de mot tapé (« bag » → « baguette »).
+ * Rien en dessous de 2 lettres ; les formes déjà complètes ne sont pas proposées.
+ */
+export function suggestProducts(fragment: string, limit = 4): string[] {
+  const key = toKey(fragment);
+  if (key.length < 2 || /\d/.test(key)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const matches = SUGGESTIONS.filter((s) => s.key.startsWith(key) && s.key !== key);
+  for (const s of matches.sort((a, b) => a.key.length - b.key.length)) {
+    if (seen.has(s.key)) continue;
+    seen.add(s.key);
+    out.push(s.label);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** Produit du dictionnaire cité quelque part dans la phrase (le plus long l'emporte). */
+export function findProductMention(text: string): ProductMatch | null {
+  const words = toKey(text).split(" ").filter(Boolean);
+  for (let size = Math.min(4, words.length); size >= 1; size--) {
+    for (let i = 0; i + size <= words.length; i++) {
+      const entry = find(words.slice(i, i + size).join(" "));
+      if (entry) return { name: entry.name, categoryId: entry.category };
+    }
+  }
+  return null;
+}
