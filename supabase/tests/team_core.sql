@@ -102,6 +102,19 @@ reset role;
 -- ── A retire B, ne peut pas se retirer, puis supprime la Team ──
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-a000-00000000000a","role":"authenticated"}', true);
 set local role authenticated;
+-- Pendant la clôture, on ne peut ni retirer un membre ni quitter la Team.
+reset role;
+update public.teams set status = 'closing' where id = current_setting('test.team')::uuid;
+set local role authenticated;
+select pg_temp.expect_error(format('select public.remove_member(%L)', current_setting('test.bm')), 'team_locked');
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-a000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+select pg_temp.expect_error(format('select public.leave_team(%L)', current_setting('test.team')), 'team_locked');
+reset role;
+update public.teams set status = 'active' where id = current_setting('test.team')::uuid;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-a000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
 -- B, déjà membre, ne peut pas être réinvité.
 select pg_temp.expect_error(format('select public.invite_member(%L, %L)', current_setting('test.team'), 'b@test.local'), 'already_member');
 select public.remove_member(current_setting('test.bm')::uuid);
