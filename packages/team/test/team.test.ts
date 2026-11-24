@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type Balance,
+  buildShares,
   canConfirm,
   computeBalances,
   planRepayments,
@@ -177,5 +178,37 @@ describe("suivi d'un remboursement de 200 €", () => {
     expect(canConfirm(20000, events, 12000)).toBe(true);
     expect(canConfirm(20000, events, 12001)).toBe(false);
     expect(canConfirm(20000, events, 0)).toBe(false);
+  });
+});
+
+describe("buildShares (formulaire de dépense)", () => {
+  it("partage à parts égales dans l'ordre des bénéficiaires", () => {
+    expect(buildShares(1000, ["A", "B", "C"], "equal")).toEqual({
+      shares: [
+        { memberId: "A", cents: 334 },
+        { memberId: "B", cents: 333 },
+        { memberId: "C", cents: 333 },
+      ],
+    });
+  });
+
+  it("reprend des parts personnalisées valables", () => {
+    expect(buildShares(1200, ["A", "B"], "custom", { A: 400, B: 800 })).toEqual({
+      shares: [
+        { memberId: "A", cents: 400 },
+        { memberId: "B", cents: 800 },
+      ],
+    });
+  });
+
+  it("refuse des parts personnalisées qui ne font pas le total", () => {
+    expect(buildShares(1200, ["A", "B"], "custom", { A: 400, B: 700 })).toEqual({
+      error: "sum_mismatch",
+    });
+  });
+
+  it("refuse un total nul ou une liste vide", () => {
+    expect(buildShares(0, ["A"], "equal")).toEqual({ error: "invalid_total" });
+    expect(buildShares(500, [], "equal")).toEqual({ error: "empty" });
   });
 });
