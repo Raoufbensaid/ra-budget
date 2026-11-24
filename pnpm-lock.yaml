@@ -172,6 +172,8 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/team: {}
+
 packages:
 
   2g@1.0.1:
