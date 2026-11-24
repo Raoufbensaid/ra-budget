@@ -33,7 +33,14 @@
           "imageWidth": 76
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ra Budget a besoin de tes photos pour lire tes tickets de caisse.",
+          "cameraPermission": "Ra Budget a besoin de l'appareil photo pour photographier tes tickets de caisse."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

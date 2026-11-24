@@ -328,6 +328,7 @@ export const fr = {
         "La dépense vient d'être corrigée : relis la nouvelle version avant de valider.",
       not_concerned: "Tu ne participes pas à cette dépense : tu n'as rien à valider.",
       reason_required: "Explique en quelques mots ce qui ne va pas.",
+      invalid_receipt: "La photo du ticket n'a pas pu être enregistrée. Réessaie.",
       generic: "Ça n'a pas marché. Vérifie ta connexion et réessaie.",
     },
   },
@@ -420,6 +421,36 @@ export const fr = {
       expense_validated: "« {{title}} » est validée par tout le monde",
       team_invitation: "Tu es invité·e à rejoindre la Team « {{team}} »",
     },
+  },
+  receipts: {
+    title: "Scanner un ticket",
+    hint: "Prends ton ticket en photo : Ra Budget lit le magasin, la date, les articles et le total. Tu vérifies ensuite tout avant d'enregistrer.",
+    checkHint:
+      "Voici ce qui a été lu. Vérifie et corrige les montants avant d'enregistrer : rien n'est validé automatiquement.",
+    camera: "Prendre une photo",
+    library: "Choisir une photo",
+    reading: "Lecture du ticket… (la première fois peut prendre une minute)",
+    ocrFailed:
+      "Le ticket n'a pas pu être lu. Réessaie avec une photo plus nette, ou saisis la dépense à la main.",
+    nothingFound:
+      "Aucun article n'a été reconnu. Complète la dépense à la main, ou reprends une photo plus nette et bien droite.",
+    noCamera:
+      "Autorise l'accès à l'appareil photo dans les réglages pour photographier tes tickets.",
+    noLibrary: "Autorise l'accès à tes photos dans les réglages pour choisir un ticket.",
+    items: "Articles (facultatif)",
+    itemLabel: "Article",
+    itemLabelPlaceholder: "Pain",
+    itemQty: "Qté",
+    itemPrice: "Prix",
+    addItem: "Ajouter un article",
+    removeItem: "Retirer {{label}}",
+    mismatch:
+      "Les articles font {{items}}, mais le total indiqué est {{total}}. Vérifie le ticket.",
+    useItemsSum: "Utiliser la somme des articles ({{amount}})",
+    photo: "Ticket de caisse",
+    photoUnavailable: "La photo du ticket n'est pas disponible.",
+    photoLarger: "Agrandir la photo du ticket",
+    photoSmaller: "Réduire la photo du ticket",
   },
   history: {
     title: "Historique",

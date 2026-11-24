@@ -10,15 +10,33 @@ import { language } from "@/i18n";
 import { categoryLabel, formatCents, formatDate, isoDate, parseEuros } from "@/lib/format";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
 import type { ExpenseDraft, TeamExpenseView } from "./api";
+import {
+  centsToText,
+  type ItemDraft,
+  ItemsEditor,
+  isItemValid,
+  newItemKey,
+  parseItemPrice,
+  parseItemQuantity,
+} from "./items-editor";
+
+/** Valeurs proposées par la lecture d'un ticket, à vérifier par la personne. */
+export interface ExpensePrefill {
+  title: string | null;
+  spentOn: string | null;
+  totalCents: number | null;
+  items: { label: string; quantity: number; unitPriceCents: number | null; totalCents: number }[];
+}
+
+function quantityText(q: number): string {
+  if (q === 1) return "";
+  const text = String(Math.round(q * 1000) / 1000);
+  return language === "fr" ? text.replace(".", ",") : text;
+}
 
 function shiftDay(iso: string, delta: number): string {
   const [y = 2000, m = 1, d = 1] = iso.split("-").map(Number);
   return isoDate(new Date(y, m - 1, d + delta));
-}
-
-function centsToText(cents: number): string {
-  const text = (cents / 100).toFixed(2).replace(/\.00$/, "");
-  return language === "fr" ? text.replace(".", ",") : text;
 }
 
 /** Part tapée par l'utilisateur : vide = 0, sinon un montant valable, sinon NaN. */
@@ -57,6 +75,7 @@ export function ExpenseForm({
   members,
   myMemberId,
   initial,
+  prefill,
   submitLabel,
   submitting,
   errorText,
@@ -65,6 +84,7 @@ export function ExpenseForm({
   members: TeamMember[];
   myMemberId: string | undefined;
   initial?: TeamExpenseView;
+  prefill?: ExpensePrefill | null;
   submitLabel: string;
   submitting: boolean;
   errorText: string | null;
@@ -75,9 +95,26 @@ export function ExpenseForm({
   const s = styles(c);
   const today = isoDate(new Date());
 
-  const [title, setTitle] = useState(initial?.title ?? "");
-  const [amount, setAmount] = useState(initial ? centsToText(initial.totalCents) : "");
-  const [date, setDate] = useState(initial?.spentOn ?? today);
+  const prefillTotal = prefill?.totalCents ?? null;
+  const [title, setTitle] = useState(initial?.title ?? prefill?.title ?? "");
+  const [amount, setAmount] = useState(
+    initial
+      ? centsToText(initial.totalCents)
+      : prefillTotal !== null && prefillTotal > 0
+        ? centsToText(prefillTotal)
+        : "",
+  );
+  const [date, setDate] = useState(
+    initial?.spentOn ?? (prefill?.spentOn && prefill.spentOn <= today ? prefill.spentOn : today),
+  );
+  const [items, setItems] = useState<ItemDraft[]>(() =>
+    (initial?.items ?? prefill?.items ?? []).map((i) => ({
+      key: newItemKey(),
+      label: i.label,
+      quantity: quantityText(i.quantity),
+      price: centsToText(i.totalCents),
+    })),
+  );
   const [category, setCategory] = useState<CategoryId | null>(initial?.categoryId ?? null);
   const [payer, setPayer] = useState(initial?.paidBy ?? myMemberId ?? members[0]?.id ?? "");
   const [selected, setSelected] = useState<string[]>(
@@ -105,7 +142,12 @@ export function ExpenseForm({
     0,
   );
   const remaining = (totalCents ?? 0) - customSum;
-  const canSubmit = title.trim().length > 0 && shares !== null && payer !== "";
+  const filledItems = items.filter((i) => i.label.trim() || i.price.trim());
+  const itemsValid = filledItems.every(isItemValid);
+  const itemsSum = filledItems.reduce((sum, i) => sum + (parseItemPrice(i.price) ?? 0), 0);
+  const itemsMismatch =
+    filledItems.length > 0 && itemsValid && totalCents !== null && itemsSum !== totalCents;
+  const canSubmit = title.trim().length > 0 && shares !== null && payer !== "" && itemsValid;
 
   const toggle = (id: string) =>
     setSelected((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
@@ -123,13 +165,17 @@ export function ExpenseForm({
         member_id: sh.memberId,
         ...(mode === "custom" ? { share_cents: sh.cents } : {}),
       })),
-      items: initial?.items.map((i) => ({
-        label: i.label,
-        quantity: i.quantity,
-        unit_price_cents: i.unitPriceCents,
-        total_cents: i.totalCents,
-        category_id: i.categoryId,
-      })),
+      items: filledItems.map((i) => {
+        const quantity = parseItemQuantity(i.quantity) ?? 1;
+        const total = parseItemPrice(i.price) ?? 0;
+        return {
+          label: i.label.trim(),
+          quantity,
+          unit_price_cents: Math.round(total / quantity),
+          total_cents: total,
+          category_id: category,
+        };
+      }),
     });
   };
 
@@ -284,6 +330,25 @@ export function ExpenseForm({
           <Text style={[s.remaining, { color: c.warning }]}>{t("teamExpenses.form.nobody")}</Text>
         ) : null}
       </View>
+
+      <ItemsEditor items={items} onChange={setItems} />
+      {itemsMismatch ? (
+        <View style={s.group}>
+          <Notice
+            text={t("receipts.mismatch", {
+              items: formatCents(itemsSum, language),
+              total: formatCents(totalCents ?? 0, language),
+            })}
+          />
+          {itemsSum > 0 ? (
+            <Button
+              variant="ghost"
+              label={t("receipts.useItemsSum", { amount: formatCents(itemsSum, language) })}
+              onPress={() => setAmount(centsToText(itemsSum))}
+            />
+          ) : null}
+        </View>
+      ) : null}
 
       {errorText ? <Notice tone="error" text={errorText} /> : null}
       <Button label={submitLabel} onPress={submit} loading={submitting} disabled={!canSubmit} />

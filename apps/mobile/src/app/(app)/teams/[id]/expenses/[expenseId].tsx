@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Button, Field, Notice } from "@/components/ui";
 import { useSession } from "@/features/auth/session-provider";
+import { ReceiptPhoto } from "@/features/receipts/receipt-photo";
 import {
   canEditExpense,
   useCancelExpense,
@@ -109,6 +110,8 @@ export default function TeamExpenseScreen() {
         <Text style={s.amount}>{formatCents(expense.totalCents, language)}</Text>
         <ExpenseStatusPill status={expense.status} />
       </View>
+
+      {expense.receiptId ? <ReceiptPhoto receiptId={expense.receiptId} /> : null}
 
       <ApprovalsCard
         expense={expense}

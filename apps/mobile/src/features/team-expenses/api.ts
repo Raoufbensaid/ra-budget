@@ -31,6 +31,7 @@ export interface TeamExpenseView {
   splitMode: SplitMode;
   status: ExpenseStatus;
   version: number;
+  receiptId: string | null;
   createdAt: string;
   beneficiaries: { memberId: string; shareCents: number }[];
   items: TeamExpenseItem[];
@@ -70,7 +71,7 @@ export interface ExpenseDraft {
 const KEY = ["team-expenses"] as const;
 
 const SELECT =
-  "id, team_id, entered_by, paid_by, title, spent_on, total_cents, category_id, split_mode, status, version, created_at, expense_beneficiaries (member_id, position, share_cents), receipt_items (position, label, quantity, unit_price_cents, total_cents, category_id), expense_approvals (member_id, version, decision, via), expense_disputes (id, member_id, version, kind, reason, status, created_at)";
+  "id, team_id, entered_by, paid_by, title, spent_on, total_cents, category_id, split_mode, status, version, receipt_id, created_at, expense_beneficiaries (member_id, position, share_cents), receipt_items (position, label, quantity, unit_price_cents, total_cents, category_id), expense_approvals (member_id, version, decision, via), expense_disputes (id, member_id, version, kind, reason, status, created_at)";
 
 interface Row {
   id: string;
@@ -84,6 +85,7 @@ interface Row {
   split_mode: SplitMode;
   status: ExpenseStatus;
   version: number;
+  receipt_id: string | null;
   created_at: string;
   expense_beneficiaries: { member_id: string; position: number; share_cents: number }[];
   receipt_items: {
@@ -124,6 +126,7 @@ function toView(r: Row): TeamExpenseView {
     splitMode: r.split_mode,
     status: r.status,
     version: r.version,
+    receiptId: r.receipt_id,
     createdAt: r.created_at,
     beneficiaries: [...(r.expense_beneficiaries ?? [])]
       .sort((a, b) => a.position - b.position)

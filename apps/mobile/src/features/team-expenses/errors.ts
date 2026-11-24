@@ -10,6 +10,7 @@ const KNOWN = [
   "stale_version",
   "not_concerned",
   "reason_required",
+  "invalid_receipt",
 ] as const;
 
 /** Texte à afficher pour une erreur d'une action sur une dépense de Team. */
