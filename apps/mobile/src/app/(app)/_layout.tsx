@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { History, PlusCircle, UserRound } from "lucide-react-native";
+import { ChartPie, History, PlusCircle, UserRound } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/theme";
 
@@ -21,6 +21,13 @@ export default function AppTabsLayout() {
         options={{
           title: t("tabs.add"),
           tabBarIcon: ({ color, size }) => <PlusCircle color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: t("tabs.dashboard"),
+          tabBarIcon: ({ color, size }) => <ChartPie color={color} size={size} />,
         }}
       />
       <Tabs.Screen

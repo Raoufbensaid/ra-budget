@@ -38,6 +38,9 @@ importers:
       '@ra/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@ra/insights':
+        specifier: workspace:*
+        version: link:../../packages/insights
       '@ra/parser':
         specifier: workspace:*
         version: link:../../packages/parser
@@ -156,6 +159,12 @@ importers:
       zod:
         specifier: ^4.6.7
         version: 4.6.7
+
+  packages/insights:
+    dependencies:
+      '@ra/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/parser:
     dependencies:

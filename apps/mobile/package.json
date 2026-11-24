@@ -6,6 +6,7 @@
     "@expo/ui": "~58.0.29",
     "@ra/assistant": "workspace:*",
     "@ra/core": "workspace:*",
+    "@ra/insights": "workspace:*",
     "@ra/parser": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.119.2",

@@ -31,6 +31,70 @@ const MONTHS = {
   en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 };
 
+const MONTHS_LONG = {
+  fr: [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+  ],
+  en: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+};
+
+/**
+ * Nom d'un mois « AAAA-MM » : « novembre », « novembre 2025 » si ce n'est pas
+ * l'année en cours, ou abrégé (« nov. ») pour les graphiques.
+ */
+export function formatMonth(
+  month: string,
+  lang: Language,
+  options: { short?: boolean; withYear?: boolean } = {},
+): string {
+  const [y, m] = month.split("-").map(Number);
+  const names = options.short ? MONTHS[lang] : MONTHS_LONG[lang];
+  const name = names[(m ?? 1) - 1] ?? "";
+  const withYear = options.withYear ?? y !== new Date().getFullYear();
+  return withYear ? `${name} ${y}` : name;
+}
+
+/** Pourcentage arrondi : « 12 % » (fr) ou « 12% » (en). */
+export function formatPercent(ratio: number, lang: Language): string {
+  const value = Math.round(ratio * 100);
+  return lang === "fr" ? `${value} %` : `${value}%`;
+}
+
+/**
+ * Lit un montant tapé par l'utilisateur (« 600 », « 1 200,50 », « 45.5 € »)
+ * et le renvoie en centimes, ou null s'il n'est pas valable.
+ */
+export function parseEuros(text: string): number | null {
+  const cleaned = text.replace(/[\s  €]/g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+  const cents = Math.round(Number(cleaned) * 100);
+  return cents > 0 ? cents : null;
+}
+
 /** AAAA-MM-JJ de la date locale. */
 export function isoDate(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
