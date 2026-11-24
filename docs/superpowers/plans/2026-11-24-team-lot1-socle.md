@@ -38,7 +38,7 @@
 
 ---
 
-### Tâche 1 : paquet de calculs `@ra/team`
+### Task 1: paquet de calculs `@ra/team`
 
 **Fichiers :**
 - Créer :
@@ -114,7 +114,7 @@ canConfirm(amountCents: number, events: RepaymentEvent[], confirmCents: number):
 - [ ] **Étape 4 :** `pnpm install`, puis `pnpm --filter @ra/team test` et `pnpm --filter @ra/team typecheck` doivent passer.
 - [ ] **Étape 5 : commit** « Ajoute le moteur de calcul des Teams (parts, soldes, remboursements) ».
 
-### Tâche 2 : base de données du socle (Teams, membres, historique)
+### Task 2: base de données du socle (Teams, membres, historique)
 
 **Fichiers :**
 - Créer : `supabase/migrations/<horodatage>_team_core.sql`
@@ -203,7 +203,7 @@ canConfirm(amountCents: number, events: RepaymentEvent[], confirmCents: number):
 - [ ] **Étape 5 :** `pnpm exec supabase db advisors --remote` ne doit signaler aucune nouvelle alerte de sécurité sur ces tables.
 - [ ] **Étape 6 : commit** « Ajoute les Teams, leurs membres et l'historique dans la base ».
 
-### Tâche 3 : onglet « Teams » dans l'application
+### Task 3: onglet « Teams » dans l'application
 
 **Fichiers :**
 - Créer :
