@@ -4,11 +4,11 @@
 begin;
 
 -- Trois comptes de test.
-insert into auth.users (id, email, aud, role)
+insert into auth.users (id, email, aud, role, email_confirmed_at)
 values
-  ('00000000-0000-4000-a000-00000000000a', 'a@test.local', 'authenticated', 'authenticated'),
-  ('00000000-0000-4000-a000-00000000000b', 'b@test.local', 'authenticated', 'authenticated'),
-  ('00000000-0000-4000-a000-00000000000c', 'c@test.local', 'authenticated', 'authenticated');
+  ('00000000-0000-4000-a000-00000000000a', 'a@test.local', 'authenticated', 'authenticated', now()),
+  ('00000000-0000-4000-a000-00000000000b', 'b@test.local', 'authenticated', 'authenticated', now()),
+  ('00000000-0000-4000-a000-00000000000c', 'c@test.local', 'authenticated', 'authenticated', now());
 
 -- Vérifie qu'une instruction échoue avec le code attendu.
 create function pg_temp.expect_error(stmt text, code text) returns void
@@ -38,18 +38,27 @@ end $$;
 -- Invité sans compte, sans e-mail, puis invitation de B (casse et espaces).
 select set_config('test.dana', public.add_guest(current_setting('test.team')::uuid, 'Dana', null)::text, true);
 select set_config('test.b', public.invite_member(current_setting('test.team')::uuid, '  B@Test.local ')::text, true);
+-- Réinviter une invitation en attente renvoie la même invitation (pas de doublon).
+do $$ begin
+  if public.invite_member(current_setting('test.team')::uuid, 'b@test.local') <> current_setting('test.b')::uuid
+  then raise exception 'réinvitation : doit renvoyer la même invitation'; end if;
+end $$;
+-- Une adresse sans compte est acceptée aussi : on ne révèle pas qui a un compte.
+select public.invite_member(current_setting('test.team')::uuid, 'nobody@test.local');
 
 do $$ begin
-  if (select status from public.team_members where id = current_setting('test.b')::uuid) <> 'invited'
-  then raise exception 'B doit être invité'; end if;
+  if (select count(*) from public.team_invitations
+      where team_id = current_setting('test.team')::uuid and accepted_at is null and declined_at is null) <> 2
+  then raise exception 'il doit y avoir 2 invitations en attente'; end if;
+  -- Le nom de B n'est pas visible avant qu'il accepte.
+  if exists (select 1 from public.team_members where user_id = '00000000-0000-4000-a000-00000000000b')
+  then raise exception 'B ne doit pas être membre avant d''accepter'; end if;
   if (select role from public.team_members where id = current_setting('test.dana')::uuid) <> 'guest'
   then raise exception 'Dana doit être invitée sans compte'; end if;
 end $$;
 
 -- Erreurs attendues côté A.
-select pg_temp.expect_error(format('select public.invite_member(%L, %L)', current_setting('test.team'), 'b@test.local'), 'already_member');
 select pg_temp.expect_error(format('select public.invite_member(%L, %L)', current_setting('test.team'), 'a@test.local'), 'already_member');
-select pg_temp.expect_error(format('select public.invite_member(%L, %L)', current_setting('test.team'), 'nobody@test.local'), 'no_account');
 select pg_temp.expect_error($q$select public.create_team('', '👥')$q$, 'invalid_name');
 select pg_temp.expect_error(format('select public.create_team(%L, %L)', repeat('x', 61), '👥'), 'invalid_name');
 select pg_temp.expect_error(format('select public.add_guest(%L, %L, %L)', current_setting('test.team'), 'Eve', 'pas-un-email'), 'invalid_email');
@@ -61,9 +70,15 @@ set local role authenticated;
 do $$ begin
   if (select count(*) from public.teams) <> 1 then raise exception 'B doit voir la Team où il est invité'; end if;
 end $$;
-select public.respond_invitation(current_setting('test.b')::uuid, true);
 do $$ begin
-  if (select status from public.team_members where id = current_setting('test.b')::uuid) <> 'active'
+  if (select count(*) from public.team_invitations) <> 1
+  then raise exception 'avant d''accepter, B ne doit voir que sa propre invitation'; end if;
+  if (select count(*) from public.team_members) <> 0
+  then raise exception 'avant d''accepter, B ne doit voir aucun membre'; end if;
+end $$;
+select set_config('test.bm', public.respond_invitation(current_setting('test.b')::uuid, true)::text, true);
+do $$ begin
+  if (select status from public.team_members where id = current_setting('test.bm')::uuid) <> 'active'
   then raise exception 'B doit être actif'; end if;
 end $$;
 -- Écriture directe interdite.
@@ -78,6 +93,7 @@ do $$ begin
   if (select count(*) from public.teams) <> 0 then raise exception 'C ne doit voir aucune Team'; end if;
   if (select count(*) from public.team_members) <> 0 then raise exception 'C ne doit voir aucun membre'; end if;
   if (select count(*) from public.audit_logs) <> 0 then raise exception 'C ne doit voir aucun historique'; end if;
+  if (select count(*) from public.team_invitations) <> 0 then raise exception 'C ne doit voir aucune invitation'; end if;
 end $$;
 select pg_temp.expect_error(format('select public.add_guest(%L, %L, null)', current_setting('test.team'), 'Intrus'), 'forbidden');
 select pg_temp.expect_error(format('select public.respond_invitation(%L, true)', current_setting('test.b')), 'forbidden');
@@ -86,9 +102,11 @@ reset role;
 -- ── A retire B, ne peut pas se retirer, puis supprime la Team ──
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-a000-00000000000a","role":"authenticated"}', true);
 set local role authenticated;
-select public.remove_member(current_setting('test.b')::uuid);
+-- B, déjà membre, ne peut pas être réinvité.
+select pg_temp.expect_error(format('select public.invite_member(%L, %L)', current_setting('test.team'), 'b@test.local'), 'already_member');
+select public.remove_member(current_setting('test.bm')::uuid);
 do $$ begin
-  if (select status from public.team_members where id = current_setting('test.b')::uuid) <> 'removed'
+  if (select status from public.team_members where id = current_setting('test.bm')::uuid) <> 'removed'
   then raise exception 'B doit être retiré'; end if;
   if (select count(*) from public.audit_logs where team_id = current_setting('test.team')::uuid) < 5
   then raise exception 'historique incomplet'; end if;
