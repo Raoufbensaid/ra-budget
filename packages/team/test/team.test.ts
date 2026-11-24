@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  approvalState,
   type Balance,
   buildShares,
   canConfirm,
   computeBalances,
   planRepayments,
   repaymentProgress,
+  requiredApprovers,
   splitEqual,
   type TeamExpense,
   type Transfer,
@@ -210,5 +212,57 @@ describe("buildShares (formulaire de dépense)", () => {
   it("refuse un total nul ou une liste vide", () => {
     expect(buildShares(0, ["A"], "equal")).toEqual({ error: "invalid_total" });
     expect(buildShares(500, [], "equal")).toEqual({ error: "empty" });
+  });
+});
+
+describe("validations", () => {
+  it("met le payeur en premier, sans doublon", () => {
+    expect(requiredApprovers("B", ["A", "B"])).toEqual(["B", "A"]);
+    expect(requiredApprovers("C", ["A", "B"])).toEqual(["C", "A", "B"]);
+  });
+
+  it("est en attente tant que tout le monde n'a pas validé", () => {
+    expect(approvalState(["B", "A"], [{ memberId: "B", decision: "approved" }])).toEqual({
+      status: "pending",
+      approved: ["B"],
+      waiting: ["A"],
+      refused: [],
+    });
+  });
+
+  it("est validée quand tout le monde a validé", () => {
+    expect(
+      approvalState(
+        ["B", "A"],
+        [
+          { memberId: "A", decision: "approved" },
+          { memberId: "B", decision: "approved" },
+        ],
+      ).status,
+    ).toBe("validated");
+  });
+
+  it("est contestée dès qu'une personne refuse", () => {
+    const state = approvalState(
+      ["B", "A"],
+      [
+        { memberId: "B", decision: "approved" },
+        { memberId: "A", decision: "refused" },
+      ],
+    );
+    expect(state.status).toBe("disputed");
+    expect(state.refused).toEqual(["A"]);
+  });
+
+  it("ignore la décision d'une personne non concernée", () => {
+    expect(
+      approvalState(
+        ["A"],
+        [
+          { memberId: "A", decision: "approved" },
+          { memberId: "Z", decision: "refused" },
+        ],
+      ).status,
+    ).toBe("validated");
   });
 });
