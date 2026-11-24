@@ -8,6 +8,7 @@
     "@ra/core": "workspace:*",
     "@ra/insights": "workspace:*",
     "@ra/parser": "workspace:*",
+    "@ra/team": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.119.2",
     "@tanstack/react-query": "^5.108.4",

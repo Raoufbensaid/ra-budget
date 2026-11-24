@@ -3,11 +3,13 @@
 > **Pour les agents :** sous-compétence requise : superpowers:executing-plans. Les étapes utilisent des cases à cocher (`- [ ]`) pour le suivi.
 
 **Objectif :**
+
 - créer le paquet de calculs `@ra/team` ;
 - créer les tables Teams, membres et historique, avec leurs règles d'accès et leurs fonctions ;
 - créer l'onglet « Teams », qui permet de créer une Team, d'y ajouter des invités et d'inviter des personnes ayant un compte.
 
 **Architecture :**
+
 - Logique financière pure dans `packages/team`, testée avec Vitest.
 - La base n'accepte aucune écriture directe sur ces tables. Tout passe par des fonctions RPC `security definer`, qui vérifient les droits et écrivent dans `audit_logs`.
 - L'application lit les tables (sous la RLS) et appelle ces RPC avec TanStack Query.
@@ -30,7 +32,7 @@
 
 ## Points de vigilance
 
-1. **E-mail invité avec des majuscules ou des espaces** (« Bob@Mail.fr  ») : il doit retrouver le compte « bob@mail.fr ». Normaliser avec `lower(trim())`.
+1. **E-mail invité avec des majuscules ou des espaces** (« Bob@Mail.fr ») : il doit retrouver le compte « bob@mail.fr ». Normaliser avec `lower(trim())`.
 2. **Nom de Team vide ou de plus de 60 caractères** : refusé avec l'erreur `invalid_name`, que l'application affiche.
 3. **Inviter quelqu'un qui est déjà membre, ou s'inviter soi-même** : refusé avec l'erreur `already_member`, sans créer de doublon.
 4. **Un compte étranger à la Team** qui appelle une RPC avec l'identifiant de cette Team : erreur `forbidden`, et ses `select` ne renvoient rien.
@@ -41,6 +43,7 @@
 ### Task 1: paquet de calculs `@ra/team`
 
 **Fichiers :**
+
 - Créer :
   - `packages/team/package.json` (même forme que `packages/insights`, sans dépendance) ;
   - `packages/team/tsconfig.json` ;
@@ -117,6 +120,7 @@ canConfirm(amountCents: number, events: RepaymentEvent[], confirmCents: number):
 ### Task 2: base de données du socle (Teams, membres, historique)
 
 **Fichiers :**
+
 - Créer : `supabase/migrations/<horodatage>_team_core.sql`
 - Test : `supabase/tests/team_core.sql`
 
@@ -186,7 +190,7 @@ canConfirm(amountCents: number, events: RepaymentEvent[], confirmCents: number):
   - **Vérifications :**
     - A crée « Voyage Lisbonne » : 1 Team, 1 membre `owner` actif ;
     - A ajoute l'invité « Dana », avec un e-mail vide ou `null` ;
-    - A invite « B@Test.local  » : B est `invited` ;
+    - A invite « B@Test.local » : B est `invited` ;
     - B voit la Team ; C ne voit ni la Team ni ses membres (0 ligne) ;
     - B accepte : B est `active` ;
     - C appelle `add_guest` sur cette Team : erreur `forbidden` ;
@@ -206,6 +210,7 @@ canConfirm(amountCents: number, events: RepaymentEvent[], confirmCents: number):
 ### Task 3: onglet « Teams » dans l'application
 
 **Fichiers :**
+
 - Créer :
   - `apps/mobile/src/features/teams/api.ts` ;
   - `apps/mobile/src/features/teams/errors.ts` ;

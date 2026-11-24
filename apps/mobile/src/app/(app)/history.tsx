@@ -3,8 +3,6 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Alert,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -21,6 +19,7 @@ import {
   usePurchases,
 } from "@/features/purchases/api";
 import { language } from "@/i18n";
+import { confirm } from "@/lib/confirm";
 import {
   capitalize,
   categoryLabel,
@@ -30,18 +29,6 @@ import {
   isoDate,
 } from "@/lib/format";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
-
-/** Confirmation avant une suppression définitive (Alert n'existe pas sur le web). */
-function confirm(message: string, ok: string, cancel: string, onConfirm: () => void) {
-  if (Platform.OS === "web") {
-    if (window.confirm(message)) onConfirm();
-    return;
-  }
-  Alert.alert(message, undefined, [
-    { text: cancel, style: "cancel" },
-    { text: ok, style: "destructive", onPress: onConfirm },
-  ]);
-}
 
 function PurchaseCard({ purchase }: { purchase: SavedPurchase }) {
   const { t } = useTranslation();

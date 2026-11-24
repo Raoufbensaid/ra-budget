@@ -5,12 +5,14 @@ Date : 24 novembre 2026. Ce document s'appuie sur le cahier des charges « Modul
 ## 1. Intention
 
 Permettre à plusieurs personnes (voyage, colocation, sortie) de partager leurs dépenses :
+
 - chaque achat est réparti entre les seules personnes concernées ;
 - chaque dépense est validée par des humains ;
 - on calcule qui rembourse qui, avec le moins de virements possible ;
 - la réception de l'argent est confirmée, y compris par des personnes sans compte.
 
 À la fin, chacun doit voir en un coup d'œil :
+
 - ce qu'il a payé ;
 - ce qu'il doit ;
 - ce qu'on lui doit ;
@@ -20,11 +22,13 @@ Permettre à plusieurs personnes (voyage, colocation, sortie) de partager leurs 
 **Objectifs :** les 20 critères de validation du cahier des charges (section 18).
 
 **Ce que le module ne fait pas :**
+
 - Ra Budget n'exécute aucun paiement ;
 - pas de devise autre que l'euro ;
 - pas de notifications push du téléphone dans cette version, car elles demandent une version installée de l'application (voir section 9).
 
 **Ce qui serait un échec, même si tout marche techniquement :**
+
 - un calcul faux d'un centime ;
 - une dépense validée sans accord humain ;
 - une modification d'une dépense validée sans trace ;
@@ -89,13 +93,13 @@ Permettre à plusieurs personnes (voyage, colocation, sortie) de partager leurs 
 
 ## 4. Pistes envisagées
 
-| Sujet | Pistes | Choix |
-|---|---|---|
-| Règles métier | (a) logique dans l'application et accès direct aux tables ; (b) **fonctions SQL (RPC) qui vérifient chaque transition**, tables en lecture seule pour les clients ; (c) serveur d'API séparé | **(b)** : les règles (somme des parts = total, droits, statuts, historique) sont garanties par la base, même si quelqu'un contourne l'application. Pas de serveur à héberger. |
-| Lecture des tickets | (a) API d'OCR payante ; (b) **tesseract.js dans l'application** (fenêtre web cachée sur iPhone, directement sur le web) ; (c) OCR dans une fonction Supabase | **(b)** : gratuit et compatible avec Expo Go. (c) est exclu, car le temps de calcul d'une fonction gratuite est trop court. |
-| E-mails | (a) envoyés depuis l'application ; (b) **file d'attente en base, puis une fonction Supabase les envoie par Brevo** | **(b)** : la clé Brevo reste côté serveur, et un e-mail n'est jamais perdu si l'application se ferme. |
-| Liens pour les invités | (a) lien de connexion « magique » ; (b) **jeton personnel à usage unique, stocké sous forme d'empreinte (SHA-256), lié à une action précise** | **(b)** : pas de compte à créer, et le droit accordé se limite à une seule action. |
-| Temps réel | (a) rafraîchir régulièrement ; (b) **Supabase Realtime** | **(b)** : messages et statuts mis à jour en direct, dans l'offre gratuite. |
+| Sujet                  | Pistes                                                                                                                                                                                       | Choix                                                                                                                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Règles métier          | (a) logique dans l'application et accès direct aux tables ; (b) **fonctions SQL (RPC) qui vérifient chaque transition**, tables en lecture seule pour les clients ; (c) serveur d'API séparé | **(b)** : les règles (somme des parts = total, droits, statuts, historique) sont garanties par la base, même si quelqu'un contourne l'application. Pas de serveur à héberger. |
+| Lecture des tickets    | (a) API d'OCR payante ; (b) **tesseract.js dans l'application** (fenêtre web cachée sur iPhone, directement sur le web) ; (c) OCR dans une fonction Supabase                                 | **(b)** : gratuit et compatible avec Expo Go. (c) est exclu, car le temps de calcul d'une fonction gratuite est trop court.                                                   |
+| E-mails                | (a) envoyés depuis l'application ; (b) **file d'attente en base, puis une fonction Supabase les envoie par Brevo**                                                                           | **(b)** : la clé Brevo reste côté serveur, et un e-mail n'est jamais perdu si l'application se ferme.                                                                         |
+| Liens pour les invités | (a) lien de connexion « magique » ; (b) **jeton personnel à usage unique, stocké sous forme d'empreinte (SHA-256), lié à une action précise**                                                | **(b)** : pas de compte à créer, et le droit accordé se limite à une seule action.                                                                                            |
+| Temps réel             | (a) rafraîchir régulièrement ; (b) **Supabase Realtime**                                                                                                                                     | **(b)** : messages et statuts mis à jour en direct, dans l'offre gratuite.                                                                                                    |
 
 ## 5. Calculs (paquet `@ra/team`, sans base ni réseau, testé)
 
@@ -105,7 +109,7 @@ Permettre à plusieurs personnes (voyage, colocation, sortie) de partager leurs 
   - payé = somme de ses dépenses en tant que payeur ;
   - part = somme de ses parts ;
   - solde = payé − part.
-  La somme des soldes vaut toujours 0.
+    La somme des soldes vaut toujours 0.
 - **`planRepayments(balances)`** : associe à chaque étape le plus gros débiteur au plus gros créancier, avec un départage fixe.
   - Il produit au plus n − 1 virements.
   - Trouver le minimum absolu est un problème très difficile ; cette méthode est la référence courante.
@@ -113,36 +117,37 @@ Permettre à plusieurs personnes (voyage, colocation, sortie) de partager leurs 
 - **Lecture des tickets** (`parseReceiptText`) : à partir du texte reconnu, des règles fixes trouvent :
   - le magasin, la date, les lignes article + prix, les quantités (« 2 x 1,20 »), les remises (lignes négatives) et le total ;
   - les écarts : la somme des lignes ne correspond pas au total.
-  Le résultat est toujours affiché pour correction.
+    Le résultat est toujours affiché pour correction.
 - **Tests :** les exemples du cahier des charges (12 € pour A et B ; 300/180/120 €), les arrondis (10 € pour 3), les parts personnalisées, les dépenses touchant une partie du groupe et les remboursements partiels.
 
 ## 6. Données (Supabase)
 
 Toutes les tables ont la RLS activée. Les lectures sont permises aux membres de la Team, via une fonction `is_team_member(team_id)`. Les écritures passent uniquement par des fonctions RPC, à part l'envoi de messages, qui se fait par ajout simple avec contrôle.
 
-| Table | Rôle |
-|---|---|
-| `teams` | nom, icône (emoji), créateur, statut : `active` (active), `closing` (bilan en validation), `settling` (remboursements en cours), `settled` (soldée), `archived` (archivée) |
-| `team_members` | participant : `user_id` (vide pour un invité), nom affiché, e-mail facultatif, rôle `owner`/`member`/`guest`, statut `invited`/`active`/`removed` |
-| `team_invitations` | invitation d'une personne avec compte : e-mail, invité par, empreinte du jeton, expiration, acceptation |
-| `team_messages` | conversation : auteur (membre), texte, type `text`/`system`, lien facultatif vers une dépense |
-| `receipts` | ticket : photo (stockage privé `receipts/<team>/<id>.jpg`), texte reconnu, état de la lecture, ajouté par |
-| `expenses` | dépense : saisie par (membre), payée par (membre), magasin, date, total, catégorie, mode de partage `equal`/`custom`, statut `pending`/`validated`/`disputed`/`cancelled`, numéro de version |
-| `receipt_items` | articles de la dépense : libellé, quantité, prix unitaire, total, catégorie |
-| `expense_beneficiaries` | part de chaque bénéficiaire, en centimes (somme = total, vérifiée par la RPC) |
-| `expense_approvals` | acceptation ou refus d'un membre pour une version donnée : auteur réel, via `app`/`email`/`owner`, date |
-| `expense_disputes` | contestation : membre, motif, état ouverte ou résolue, résolution |
-| `team_settlements` | bilan : demandé par, statut `pending`/`approved`/`superseded`, copie figée des dépenses incluses |
-| `settlement_balances` | payé, part et solde de chaque membre dans le bilan |
-| `settlement_approvals` | validation du bilan par chaque participant (même règle que pour les dépenses) |
-| `repayments` | virement à faire : de, vers, montant |
-| `repayment_events` | déclaration du débiteur ou confirmation du créancier : montant, auteur, via, date |
-| `action_tokens` | liens e-mail : empreinte, objet (`approve_expense`, `approve_settlement`, `confirm_repayment`, `accept_invitation`), membre, cible, expiration, utilisation |
-| `notifications` | notifications dans l'application : destinataire (compte), Team, type, données, lu le |
-| `email_outbox` | e-mails à envoyer (lisibles par le serveur seulement) ; le lien en clair est effacé après l'envoi |
-| `audit_logs` | historique : auteur (compte et/ou membre), action, cible, données avant/après, date. Ajout seulement : ni modification ni suppression, même par les fonctions. |
+| Table                   | Rôle                                                                                                                                                                                         |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `teams`                 | nom, icône (emoji), créateur, statut : `active` (active), `closing` (bilan en validation), `settling` (remboursements en cours), `settled` (soldée), `archived` (archivée)                   |
+| `team_members`          | participant : `user_id` (vide pour un invité), nom affiché, e-mail facultatif, rôle `owner`/`member`/`guest`, statut `invited`/`active`/`removed`                                            |
+| `team_invitations`      | invitation d'une personne avec compte : e-mail, invité par, empreinte du jeton, expiration, acceptation                                                                                      |
+| `team_messages`         | conversation : auteur (membre), texte, type `text`/`system`, lien facultatif vers une dépense                                                                                                |
+| `receipts`              | ticket : photo (stockage privé `receipts/<team>/<id>.jpg`), texte reconnu, état de la lecture, ajouté par                                                                                    |
+| `expenses`              | dépense : saisie par (membre), payée par (membre), magasin, date, total, catégorie, mode de partage `equal`/`custom`, statut `pending`/`validated`/`disputed`/`cancelled`, numéro de version |
+| `receipt_items`         | articles de la dépense : libellé, quantité, prix unitaire, total, catégorie                                                                                                                  |
+| `expense_beneficiaries` | part de chaque bénéficiaire, en centimes (somme = total, vérifiée par la RPC)                                                                                                                |
+| `expense_approvals`     | acceptation ou refus d'un membre pour une version donnée : auteur réel, via `app`/`email`/`owner`, date                                                                                      |
+| `expense_disputes`      | contestation : membre, motif, état ouverte ou résolue, résolution                                                                                                                            |
+| `team_settlements`      | bilan : demandé par, statut `pending`/`approved`/`superseded`, copie figée des dépenses incluses                                                                                             |
+| `settlement_balances`   | payé, part et solde de chaque membre dans le bilan                                                                                                                                           |
+| `settlement_approvals`  | validation du bilan par chaque participant (même règle que pour les dépenses)                                                                                                                |
+| `repayments`            | virement à faire : de, vers, montant                                                                                                                                                         |
+| `repayment_events`      | déclaration du débiteur ou confirmation du créancier : montant, auteur, via, date                                                                                                            |
+| `action_tokens`         | liens e-mail : empreinte, objet (`approve_expense`, `approve_settlement`, `confirm_repayment`, `accept_invitation`), membre, cible, expiration, utilisation                                  |
+| `notifications`         | notifications dans l'application : destinataire (compte), Team, type, données, lu le                                                                                                         |
+| `email_outbox`          | e-mails à envoyer (lisibles par le serveur seulement) ; le lien en clair est effacé après l'envoi                                                                                            |
+| `audit_logs`            | historique : auteur (compte et/ou membre), action, cible, données avant/après, date. Ajout seulement : ni modification ni suppression, même par les fonctions.                               |
 
 Les notions demandées à la section 15 sont bien distinctes :
+
 - **saisi par** : `expenses.entered_by` ;
 - **payé par** : `expenses.paid_by` ;
 - **bénéficiaires** : `expense_beneficiaries` ;
@@ -152,10 +157,12 @@ Les notions demandées à la section 15 sont bien distinctes :
 **Photos des tickets :** espace de stockage privé, dont les règles limitent la lecture et l'ajout aux membres de la Team.
 
 **Pages publiques des liens :** deux fonctions RPC accessibles sans compte.
+
 - `token_view(token)` montre uniquement ce que l'action concerne.
 - `token_act(token, …)` vérifie l'empreinte, l'expiration et l'usage unique, enregistre l'action avec « via e-mail » et invalide le jeton.
 
 **Données personnelles (RGPD) :**
+
 - l'e-mail d'un invité n'est visible que par les membres de sa Team ;
 - le créateur peut l'effacer ;
 - la suppression d'une Team efface ses photos et ses invités.
