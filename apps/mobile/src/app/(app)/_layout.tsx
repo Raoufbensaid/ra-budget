@@ -1,11 +1,13 @@
 import { Tabs } from "expo-router";
 import { ChartPie, History, PlusCircle, UserRound, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import { useUnreadCount } from "@/features/notifications/api";
 import { useTheme } from "@/theme";
 
 export default function AppTabsLayout() {
   const { t } = useTranslation();
   const c = useTheme();
+  const unread = useUnreadCount();
   return (
     <Tabs
       screenOptions={{
@@ -34,6 +36,7 @@ export default function AppTabsLayout() {
         name="teams"
         options={{
           title: t("tabs.teams"),
+          tabBarBadge: unread > 0 ? unread : undefined,
           tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
         }}
       />

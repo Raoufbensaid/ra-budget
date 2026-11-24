@@ -401,6 +401,21 @@ export const en: Messages = {
       removed: "{{name}} removed {{member}} from the Team",
     },
   },
+  notifications: {
+    title: "Notifications",
+    open_one: "Notifications, {{count}} unread",
+    open_other: "Notifications, {{count}} unread",
+    empty: "No notifications yet.",
+    markAll: "Mark all as read",
+    new: "New",
+    kind: {
+      approval_requested: "Approval requested: “{{title}}” · {{amount}}",
+      expense_corrected: "“{{title}}” was corrected: approve the new version",
+      expense_disputed: "“{{title}}” is disputed",
+      expense_validated: "“{{title}}” was approved by everyone",
+      team_invitation: "You're invited to join the Team “{{team}}”",
+    },
+  },
   history: {
     title: "History",
     month: "This month",

@@ -406,6 +406,21 @@ export const fr = {
       removed: "{{name}} a retiré {{member}} de la Team",
     },
   },
+  notifications: {
+    title: "Notifications",
+    open_one: "Notifications, {{count}} non lue",
+    open_other: "Notifications, {{count}} non lues",
+    empty: "Aucune notification pour l'instant.",
+    markAll: "Tout marquer comme lu",
+    new: "Nouvelle",
+    kind: {
+      approval_requested: "Validation demandée : « {{title}} » · {{amount}}",
+      expense_corrected: "« {{title}} » a été corrigée : valide la nouvelle version",
+      expense_disputed: "« {{title}} » est contestée",
+      expense_validated: "« {{title}} » est validée par tout le monde",
+      team_invitation: "Tu es invité·e à rejoindre la Team « {{team}} »",
+    },
+  },
   history: {
     title: "Historique",
     month: "Ce mois-ci",

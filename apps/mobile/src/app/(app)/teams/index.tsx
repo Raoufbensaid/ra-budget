@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { ChevronRight, Plus } from "lucide-react-native";
+import { Bell, ChevronRight, Plus } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Notice } from "@/components/ui";
+import { useUnreadCount } from "@/features/notifications/api";
 import {
   type ReceivedInvitation,
   type Team,
@@ -116,6 +117,7 @@ export default function TeamsScreen() {
   const query = useTeams();
   const teams = query.data?.teams ?? [];
   const invitations = query.data?.invitations ?? [];
+  const unread = useUnreadCount();
 
   return (
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
@@ -127,7 +129,21 @@ export default function TeamsScreen() {
       >
         <Text style={s.brand}>RA BUDGET</Text>
         <View style={s.titleRow}>
-          <Text style={s.title}>{t("teams.title")}</Text>
+          <Text style={[s.title, s.flex]}>{t("teams.title")}</Text>
+          <Pressable
+            onPress={() => router.push("/teams/notifications")}
+            accessibilityRole="button"
+            accessibilityLabel={t("notifications.open", { count: unread })}
+            hitSlop={8}
+            style={s.bell}
+          >
+            <Bell size={20} color={c.text} />
+            {unread > 0 ? (
+              <View style={s.badge}>
+                <Text style={s.badgeText}>{unread > 9 ? "9+" : unread}</Text>
+              </View>
+            ) : null}
+          </Pressable>
           {teams.length > 0 ? (
             <Pressable
               onPress={() => router.push("/teams/new")}
@@ -196,6 +212,30 @@ const styles = (c: Palette) =>
     },
     title: { color: c.text, fontSize: font.title, fontWeight: "700" },
     subtitle: { color: c.textMuted, fontSize: font.small, lineHeight: 20, marginTop: -space.sm },
+    bell: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.pill,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      marginRight: space.sm,
+    },
+    badge: {
+      position: "absolute",
+      top: -2,
+      right: -2,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 4,
+      backgroundColor: c.danger,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    badgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "800" },
     addButton: {
       width: 40,
       height: 40,
