@@ -11,9 +11,11 @@ import {
   useTeamExpense,
   useUpdateExpense,
 } from "@/features/team-expenses/api";
+import { ApprovalsCard } from "@/features/team-expenses/approvals-card";
 import { expenseErrorMessage } from "@/features/team-expenses/errors";
 import { ExpenseForm } from "@/features/team-expenses/expense-form";
 import { ExpenseStatusPill } from "@/features/team-expenses/expense-status";
+import { HistoryCard } from "@/features/team-expenses/history-card";
 import { myMember, useTeam } from "@/features/teams/api";
 import { language } from "@/i18n";
 import { confirm } from "@/lib/confirm";
@@ -108,6 +110,16 @@ export default function TeamExpenseScreen() {
         <ExpenseStatusPill status={expense.status} />
       </View>
 
+      <ApprovalsCard
+        expense={expense}
+        members={team.data.members}
+        myMemberId={me?.id}
+        isOwner={isOwner}
+        active={team.data.status === "active" && expense.status !== "cancelled"}
+        canEdit={editable}
+        onEdit={() => setEditing(true)}
+      />
+
       <View style={s.card}>
         <InfoRow label={t("teamExpenses.detail.date")} value={capitalize(date)} />
         <InfoRow label={t("teamExpenses.detail.paidBy")} value={nameOf(expense.paidBy)} />
@@ -138,7 +150,6 @@ export default function TeamExpenseScreen() {
             <Text style={s.shareAmount}>{formatCents(b.shareCents, language)}</Text>
           </View>
         ))}
-        <Text style={s.muted}>{t("teamExpenses.detail.validationSoon")}</Text>
       </View>
 
       {expense.items.length > 0 ? (
@@ -213,6 +224,7 @@ export default function TeamExpenseScreen() {
           </View>
         )
       ) : null}
+      <HistoryCard expenseId={expense.id} members={team.data.members} />
     </ScrollView>
   );
 }

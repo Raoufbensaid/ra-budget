@@ -7,6 +7,9 @@ const KNOWN = [
   "invalid_shares",
   "invalid_expense",
   "expense_cancelled",
+  "stale_version",
+  "not_concerned",
+  "reason_required",
 ] as const;
 
 /** Texte à afficher pour une erreur d'une action sur une dépense de Team. */
