@@ -101,3 +101,4 @@ export function parseUtterance(input: string, options: ParseOptions): ParsedUtte
   };
   return result;
 }
+export { type ParsedReceipt, parseReceiptText, type ReceiptLine } from "./receipt";
