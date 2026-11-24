@@ -1,7 +1,7 @@
 import { type ComponentType, type ReactElement, type Ref, useCallback, useRef } from "react";
 import { StyleSheet } from "react-native";
 import { WebView, type WebViewMessageEvent, type WebViewProps } from "react-native-webview";
-import { OCR_HTML } from "./tesseract";
+import { asOcrMessage, OCR_HTML } from "./tesseract";
 
 /** Ce dont on se sert de la WebView (ses types ne suivent pas encore React 19). */
 interface WebViewHandle {
@@ -35,12 +35,14 @@ export function useOcr(): {
   }
 
   const onMessage = useCallback((event: WebViewMessageEvent) => {
-    let message: { ready?: boolean; id?: string; text?: string; error?: string };
+    let parsed: unknown;
     try {
-      message = JSON.parse(event.nativeEvent.data);
+      parsed = JSON.parse(event.nativeEvent.data);
     } catch {
       return;
     }
+    const message = asOcrMessage(parsed);
+    if (!message) return;
     if (message.ready) {
       markReady.current();
       return;
@@ -48,7 +50,7 @@ export function useOcr(): {
     const waiting = message.id ? pending.current.get(message.id) : undefined;
     if (!waiting || !message.id) return;
     pending.current.delete(message.id);
-    if (message.error) waiting.reject(new Error(message.error));
+    if (message.error !== undefined) waiting.reject(new Error(message.error));
     else waiting.resolve(message.text ?? "");
   }, []);
 
@@ -67,7 +69,11 @@ export function useOcr(): {
     <HiddenWebView
       ref={webview}
       source={{ html: OCR_HTML, baseUrl: "https://localhost/" }}
-      originWhitelist={["*"]}
+      // Page locale seulement : aucune navigation vers un autre site.
+      originWhitelist={["about:*", "https://localhost"]}
+      onShouldStartLoadWithRequest={(request) =>
+        request.url === "about:blank" || request.url.startsWith("https://localhost")
+      }
       onMessage={onMessage}
       javaScriptEnabled
       style={styles.hidden}
