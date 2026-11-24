@@ -13,6 +13,8 @@ interface Props {
   canValidate: boolean;
   onRemove: (itemId: string) => void;
   onValidate: () => void;
+  saving?: boolean;
+  saveFailed?: boolean;
   /** Sur téléphone : panneau repliable au-dessus de la conversation. */
   collapsible: boolean;
 }
@@ -77,7 +79,15 @@ function ItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void }) {
   );
 }
 
-export function CartPanel({ cart, canValidate, onRemove, onValidate, collapsible }: Props) {
+export function CartPanel({
+  cart,
+  canValidate,
+  onRemove,
+  onValidate,
+  collapsible,
+  saving = false,
+  saveFailed = false,
+}: Props) {
   const { t } = useTranslation();
   const c = useTheme();
   const s = styles(c);
@@ -139,10 +149,11 @@ export function CartPanel({ cart, canValidate, onRemove, onValidate, collapsible
         </View>
       ) : null}
 
+      {saveFailed ? <Text style={s.saveError}>{t("save.error")}</Text> : null}
       {expanded || canValidate ? (
         <Pressable
           onPress={onValidate}
-          disabled={!canValidate}
+          disabled={!canValidate || saving}
           accessibilityRole="button"
           style={({ pressed }) => [
             s.validate,
@@ -151,7 +162,7 @@ export function CartPanel({ cart, canValidate, onRemove, onValidate, collapsible
           ]}
         >
           <Text style={[s.validateText, !canValidate && { color: c.textMuted }]}>
-            {t("expense.validate")}
+            {saving ? t("save.saving") : t("expense.validate")}
           </Text>
         </Pressable>
       ) : null}
@@ -228,5 +239,6 @@ const styles = (c: Palette) =>
       alignItems: "center",
     },
     validateDisabled: { backgroundColor: c.surfaceMuted },
+    saveError: { color: c.danger, fontSize: font.small },
     validateText: { color: c.onAccent, fontSize: font.body, fontWeight: "700" },
   });

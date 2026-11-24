@@ -21,6 +21,7 @@ import type { PriceScope, ReferencePrice } from "@ra/parser";
 import type { TFunction } from "i18next";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSavePurchase } from "@/features/purchases/api";
 import { type Language, language } from "@/i18n";
 import { describeItem, formatCents, formatDate, isoDate } from "@/lib/format";
 
@@ -153,6 +154,7 @@ export function useExpenseChat() {
   ]);
   const [saved, setSaved] = useState<PurchaseDraft[]>([]);
   const [lastSaved, setLastSaved] = useState<PurchaseDraft | null>(null);
+  const save = useSavePurchase();
   const usedVoice = useRef(false);
 
   /** Applique une étape : nouveaux messages de l'assistant, puis sa question. */
@@ -209,22 +211,28 @@ export function useExpenseChat() {
   const remove = useCallback((itemId: string) => apply(removeItem(conv, itemId)), [apply, conv]);
   const undoLast = useCallback(() => apply(undo(conv)), [apply, conv]);
 
+  /** Enregistre la dépense dans Supabase ; le panier reste intact en cas d'échec. */
   const validate = useCallback(() => {
-    if (!canValidate(conv.cart)) return;
+    if (!canValidate(conv.cart) || save.isPending) return;
     const draft = toPurchaseDraft(conv.cart, {
       source: usedVoice.current ? "voice" : "text",
       today: isoDate(new Date()),
     });
-    setSaved((s) => [...s, draft]);
-    setLastSaved(draft);
-  }, [conv]);
+    save.mutate(draft, {
+      onSuccess: () => {
+        setSaved((s) => [...s, draft]);
+        setLastSaved(draft);
+      },
+    });
+  }, [conv, save]);
 
   const restart = useCallback(() => {
     usedVoice.current = false;
     setConv(createConversation());
     setMessages([{ id: nextId(), role: "assistant", text: t("expense.welcome") }]);
     setLastSaved(null);
-  }, [t]);
+    save.reset();
+  }, [t, save]);
 
   return {
     conv,
@@ -232,6 +240,8 @@ export function useExpenseChat() {
     saved,
     lastSaved,
     canValidate: canValidate(conv.cart),
+    saving: save.isPending,
+    saveFailed: save.isError,
     send,
     chooseScope,
     chooseCategory,

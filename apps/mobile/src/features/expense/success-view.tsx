@@ -10,9 +10,10 @@ interface Props {
   draft: PurchaseDraft;
   sessionCount: number;
   onAgain: () => void;
+  onHistory: () => void;
 }
 
-export function SuccessView({ draft, sessionCount, onAgain }: Props) {
+export function SuccessView({ draft, sessionCount, onAgain, onHistory }: Props) {
   const { t } = useTranslation();
   const c = useTheme();
   const s = styles(c);
@@ -51,6 +52,13 @@ export function SuccessView({ draft, sessionCount, onAgain }: Props) {
           style={({ pressed }) => [s.button, pressed && { backgroundColor: c.accentPressed }]}
         >
           <Text style={s.buttonText}>{t("done.again")}</Text>
+        </Pressable>
+        <Pressable
+          onPress={onHistory}
+          accessibilityRole="button"
+          style={({ pressed }) => [s.secondary, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={s.secondaryText}>{t("done.seeHistory")}</Text>
         </Pressable>
         <Text style={s.note}>{t("done.session", { count: sessionCount })}</Text>
       </View>
@@ -100,5 +108,7 @@ const styles = (c: Palette) =>
       paddingVertical: 14,
       alignItems: "center",
     },
+    secondary: { alignSelf: "stretch", paddingVertical: 12, alignItems: "center" },
+    secondaryText: { color: c.accent, fontSize: font.body, fontWeight: "700" },
     buttonText: { color: c.onAccent, fontSize: font.body, fontWeight: "700" },
   });

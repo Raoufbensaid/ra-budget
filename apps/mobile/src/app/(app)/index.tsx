@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { Undo2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import {
@@ -37,6 +38,10 @@ export default function AddExpenseScreen() {
           draft={chat.lastSaved}
           sessionCount={chat.saved.length}
           onAgain={chat.restart}
+          onHistory={() => {
+            chat.restart();
+            router.navigate("/history");
+          }}
         />
       </SafeAreaView>
     );
@@ -53,12 +58,14 @@ export default function AddExpenseScreen() {
       canValidate={chat.canValidate}
       onRemove={chat.remove}
       onValidate={chat.validate}
+      saving={chat.saving}
+      saveFailed={chat.saveFailed}
       collapsible={!wide}
     />
   );
 
   return (
-    <SafeAreaView style={s.screen} edges={["top", "bottom", "left", "right"]}>
+    <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView style={s.flex} behavior="padding">
         <View style={[s.frame, wide && s.frameWide]}>
           <View style={s.header}>
