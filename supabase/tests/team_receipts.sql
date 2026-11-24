@@ -58,6 +58,16 @@ do $$ begin
 end $$;
 reset role;
 
+-- ── Team en clôture : plus de dépôt ni de nouveau ticket ──
+update public.teams set status = 'closing' where id = current_setting('test.team')::uuid;
+select pg_temp.login('a');
+set local role authenticated;
+select pg_temp.expect_error(format('insert into storage.objects (bucket_id, name, owner) values (%L, %L, auth.uid())',
+  'receipts', current_setting('test.team') || '/tard.jpg'), 'new row violates row-level security policy%');
+select pg_temp.expect_error(format('select public.create_receipt(%L, %L, %L)', current_setting('test.team'), current_setting('test.path'), ''), 'team_locked');
+reset role;
+update public.teams set status = 'active' where id = current_setting('test.team')::uuid;
+
 -- ── C ne voit ni le ticket ni la photo, et ne peut pas l'utiliser ──
 select pg_temp.login('c');
 set local role authenticated;
