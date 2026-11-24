@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Button, Field, Notice } from "@/components/ui";
 import { useSession } from "@/features/auth/session-provider";
+import { ExpensesSection } from "@/features/team-expenses/expenses-section";
 import {
   myMember,
   type Team,
@@ -181,9 +182,13 @@ export default function TeamScreen() {
           </Pressable>
         ))}
       </View>
-      <View style={s.soon}>
-        <Text style={s.muted}>{t("teams.detail.soon")}</Text>
-      </View>
+      {section === "expenses" ? (
+        <ExpensesSection team={team} />
+      ) : (
+        <View style={s.soon}>
+          <Text style={s.muted}>{t("teams.detail.soon")}</Text>
+        </View>
+      )}
 
       <View style={s.card}>
         <Text style={s.cardTitle}>{t("teams.detail.membersTitle")}</Text>

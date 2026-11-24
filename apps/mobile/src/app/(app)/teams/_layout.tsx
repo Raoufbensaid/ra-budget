@@ -18,7 +18,9 @@ export default function TeamsLayout() {
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="new" options={{ title: t("teams.new.title") }} />
-      <Stack.Screen name="[id]" options={{ title: "" }} />
+      <Stack.Screen name="[id]/index" options={{ title: "" }} />
+      <Stack.Screen name="[id]/expenses/new" options={{ title: t("teamExpenses.add") }} />
+      <Stack.Screen name="[id]/expenses/[expenseId]" options={{ title: "" }} />
     </Stack>
   );
 }
