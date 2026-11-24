@@ -34,6 +34,11 @@ create function pg_temp.status(p text) returns text language sql as $$
 $$;
 grant execute on function pg_temp.status(text) to authenticated;
 
+create function pg_temp.ver(p text) returns int language sql as $$
+  select version from public.expenses where id = current_setting(p)::uuid;
+$$;
+grant execute on function pg_temp.ver(text) to authenticated;
+
 create function pg_temp.login(p_letter text) returns void language sql as $$
   select set_config('request.jwt.claims',
     format('{"sub":"00000000-0000-4000-a000-00000000000%s","role":"authenticated"}', p_letter), true);
@@ -72,8 +77,8 @@ end $$;
 reset role;
 select pg_temp.login('b');
 set local role authenticated;
-select public.approve_expense(current_setting('test.e1')::uuid);
-select public.approve_expense(current_setting('test.e1')::uuid); -- deux fois : pas de doublon
+select public.approve_expense(current_setting('test.e1')::uuid, pg_temp.ver('test.e1'));
+select public.approve_expense(current_setting('test.e1')::uuid, pg_temp.ver('test.e1')); -- deux fois : pas de doublon
 do $$ begin
   if pg_temp.status('test.e1') <> 'validated' then raise exception '1 : validated attendu'; end if;
   if (select count(*) from public.expense_approvals where expense_id = current_setting('test.e1')::uuid) <> 2
@@ -83,7 +88,7 @@ end $$;
 reset role;
 select pg_temp.login('c');
 set local role authenticated;
-select pg_temp.expect_error(format('select public.approve_expense(%L)', current_setting('test.e1')), 'not_concerned');
+select pg_temp.expect_error(format('select public.approve_expense(%L, %s)', current_setting('test.e1'), pg_temp.ver('test.e1')), 'not_concerned');
 reset role;
 
 -- ── 2. A paie pour A, B, Dana et Eve ; B conteste ; A corrige ──
@@ -95,16 +100,16 @@ select set_config('test.e2', public.create_expense(current_setting('test.team'):
 reset role;
 select pg_temp.login('b');
 set local role authenticated;
-select pg_temp.expect_error(format('select public.dispute_expense(%L, %L, %L)', current_setting('test.e2'), 'error', ''), 'reason_required');
-select pg_temp.expect_error(format('select public.dispute_expense(%L, %L, %L)', current_setting('test.e2'), 'n_importe_quoi', 'x'), 'invalid_kind');
-select public.dispute_expense(current_setting('test.e2')::uuid, 'error', 'Le pain coûtait 1 €');
+select pg_temp.expect_error(format('select public.dispute_expense(%L, %s, %L, %L)', current_setting('test.e2'), pg_temp.ver('test.e2'), 'error', ''), 'reason_required');
+select pg_temp.expect_error(format('select public.dispute_expense(%L, %s, %L, %L)', current_setting('test.e2'), pg_temp.ver('test.e2'), 'n_importe_quoi', 'x'), 'invalid_kind');
+select public.dispute_expense(current_setting('test.e2')::uuid, pg_temp.ver('test.e2'), 'error', 'Le pain coûtait 1 €');
 do $$ begin
   if pg_temp.status('test.e2') <> 'disputed' then raise exception '2 : disputed attendu'; end if;
   if (select count(*) from public.expense_disputes where expense_id = current_setting('test.e2')::uuid and status = 'open') <> 1
   then raise exception '2 : une contestation ouverte attendue'; end if;
 end $$;
 -- B ne peut pas valider pour Dana (il n'est pas le créateur).
-select pg_temp.expect_error(format('select public.approve_expense(%L, %L)', current_setting('test.e2'), current_setting('test.dana')), 'forbidden');
+select pg_temp.expect_error(format('select public.approve_expense(%L, %s, %L)', current_setting('test.e2'), pg_temp.ver('test.e2'), current_setting('test.dana')), 'forbidden');
 reset role;
 
 select pg_temp.login('a');
@@ -117,9 +122,18 @@ do $$ begin
   if exists (select 1 from public.expense_disputes where expense_id = current_setting('test.e2')::uuid and status = 'open')
   then raise exception '2 : la contestation doit être résolue par la correction'; end if;
 end $$;
+reset role;
+-- B a vu la version 1 ; A a corrigé entre-temps (version 2) : la validation de B est refusée.
+select pg_temp.login('b');
+set local role authenticated;
+select pg_temp.expect_error(format('select public.approve_expense(%L, 1)', current_setting('test.e2')), 'stale_version');
+select pg_temp.expect_error(format('select public.dispute_expense(%L, 1, %L, %L)', current_setting('test.e2'), 'refuse', ''), 'stale_version');
+reset role;
+select pg_temp.login('a');
+set local role authenticated;
 -- A valide pour Dana (sans e-mail), pas pour Eve (avec e-mail).
-select public.approve_expense(current_setting('test.e2')::uuid, current_setting('test.dana')::uuid);
-select pg_temp.expect_error(format('select public.approve_expense(%L, %L)', current_setting('test.e2'), current_setting('test.eve')), 'forbidden');
+select public.approve_expense(current_setting('test.e2')::uuid, pg_temp.ver('test.e2'), current_setting('test.dana')::uuid);
+select pg_temp.expect_error(format('select public.approve_expense(%L, %s, %L)', current_setting('test.e2'), pg_temp.ver('test.e2'), current_setting('test.eve')), 'forbidden');
 do $$ begin
   if (select via from public.expense_approvals where expense_id = current_setting('test.e2')::uuid
       and member_id = current_setting('test.dana')::uuid and version = 2) <> 'owner'
@@ -129,7 +143,7 @@ reset role;
 
 select pg_temp.login('b');
 set local role authenticated;
-select public.approve_expense(current_setting('test.e2')::uuid);
+select public.approve_expense(current_setting('test.e2')::uuid, pg_temp.ver('test.e2'));
 do $$ begin
   -- Eve (invitée avec e-mail) n'a pas encore validé.
   if pg_temp.status('test.e2') <> 'pending' then raise exception '2 : pending attendu (Eve attend)'; end if;
@@ -137,7 +151,7 @@ end $$;
 reset role;
 
 -- Eve valide (simulation du lien e-mail de l'étape 6, en direct par la fonction interne).
-select public.record_approval(current_setting('test.e2')::uuid, current_setting('test.eve')::uuid, 'approved', 'email');
+select public.record_approval(current_setting('test.e2')::uuid, pg_temp.ver('test.e2'), current_setting('test.eve')::uuid, 'approved', 'email');
 do $$ begin
   if pg_temp.status('test.e2') <> 'validated' then raise exception '2 : validated attendu'; end if;
 end $$;
@@ -149,7 +163,7 @@ select public.cancel_expense(current_setting('test.e1')::uuid, 'Doublon');
 reset role;
 select pg_temp.login('b');
 set local role authenticated;
-select pg_temp.expect_error(format('select public.approve_expense(%L)', current_setting('test.e1')), 'expense_cancelled');
+select pg_temp.expect_error(format('select public.approve_expense(%L, %s)', current_setting('test.e1'), pg_temp.ver('test.e1')), 'expense_cancelled');
 select pg_temp.expect_error($q$insert into public.expense_approvals (expense_id, member_id, version, decision, via) values (gen_random_uuid(), gen_random_uuid(), 1, 'approved', 'app')$q$, 'permission denied for table expense_approvals');
 reset role;
 
