@@ -120,6 +120,8 @@ export const fr = {
     newPassword: "Nouveau mot de passe",
     setPassword: "Enregistrer le mot de passe",
     passwordSaved: "Mot de passe enregistré. Tu peux maintenant te connecter avec.",
+    confirmWithCode:
+      "Par sécurité, saisis le code envoyé à {{email}}, puis touche à nouveau « Enregistrer le mot de passe ».",
     signOut: "Se déconnecter",
   },
   save: {

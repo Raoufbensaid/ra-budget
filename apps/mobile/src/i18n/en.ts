@@ -115,6 +115,8 @@ export const en: Messages = {
     newPassword: "New password",
     setPassword: "Save password",
     passwordSaved: "Password saved. You can now sign in with it.",
+    confirmWithCode:
+      "For security, enter the code sent to {{email}}, then tap « Save password » again.",
     signOut: "Sign out",
   },
   save: {

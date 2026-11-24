@@ -4,6 +4,7 @@
  */
 import type { CategoryId, PurchaseDraft, Unit } from "@ra/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "@/features/auth/session-provider";
 import { supabase } from "@/lib/supabase";
 
 export interface SavedItem {
@@ -43,8 +44,11 @@ export function useSavePurchase() {
 }
 
 export function usePurchases() {
+  const userId = useSession().session?.user.id ?? null;
   return useQuery({
-    queryKey: PURCHASES_KEY,
+    // Clé propre à chaque compte : jamais de dépenses d'un autre compte en cache.
+    queryKey: [...PURCHASES_KEY, userId],
+    enabled: userId !== null,
     queryFn: async (): Promise<SavedPurchase[]> => {
       const { data, error } = await supabase
         .from("purchases")

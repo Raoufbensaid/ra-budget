@@ -17,16 +17,41 @@ export default function ProfileScreen() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: "info" | "error" } | null>(null);
+  /** Code de vérification demandé si la connexion date de plus de 24 h. */
+  const [needsCode, setNeedsCode] = useState(false);
+  const [code, setCode] = useState("");
 
   const savePassword = async () => {
     if (!password) return;
     setBusy(true);
     setMessage(null);
-    const { error } = await supabase.auth.updateUser({ password });
+    const nonce = needsCode ? code.replace(/\s/g, "") : undefined;
+    const { error } = await supabase.auth.updateUser({ password, nonce });
+    if (error?.code === "reauthentication_needed") {
+      // Connexion trop ancienne : on vérifie que c'est bien toi avec un code par e-mail.
+      const { error: sendError } = await supabase.auth.reauthenticate();
+      setBusy(false);
+      if (sendError) {
+        setMessage({ text: authErrorMessage(sendError, t), tone: "error" });
+        return;
+      }
+      setNeedsCode(true);
+      setCode("");
+      setMessage({
+        text: t("profile.confirmWithCode", { email: session?.user.email ?? "" }),
+        tone: "info",
+      });
+      return;
+    }
     setBusy(false);
-    if (error) setMessage({ text: authErrorMessage(error, t), tone: "error" });
-    else {
+    if (error?.code === "reauthentication_not_valid") {
+      setMessage({ text: t("auth.errors.badCode"), tone: "error" });
+    } else if (error) {
+      setMessage({ text: authErrorMessage(error, t), tone: "error" });
+    } else {
       setPassword("");
+      setCode("");
+      setNeedsCode(false);
       setMessage({ text: t("profile.passwordSaved"), tone: "info" });
     }
   };
@@ -54,6 +79,18 @@ export default function ProfileScreen() {
             onSubmitEditing={savePassword}
           />
           <Text style={s.hint}>{t("auth.passwordHint")}</Text>
+          {needsCode ? (
+            <Field
+              label={t("auth.code")}
+              value={code}
+              onChangeText={setCode}
+              keyboardType="number-pad"
+              textContentType="oneTimeCode"
+              autoComplete="one-time-code"
+              maxLength={10}
+              onSubmitEditing={savePassword}
+            />
+          ) : null}
           {message ? <Notice text={message.text} tone={message.tone} /> : null}
           <Button
             variant="secondary"
