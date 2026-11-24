@@ -144,8 +144,8 @@ export default function TeamExpenseScreen() {
       {expense.items.length > 0 ? (
         <View style={s.card}>
           <Text style={s.cardTitle}>{t("teamExpenses.detail.items")}</Text>
-          {expense.items.map((item, i) => (
-            <View key={`${i}-${item.label}`} style={s.shareRow}>
+          {expense.items.map((item) => (
+            <View key={item.position} style={s.shareRow}>
               <Text style={[s.flex, s.shareName]} numberOfLines={1}>
                 {item.quantity !== 1 ? `${item.quantity} × ` : ""}
                 {item.label}

@@ -9,6 +9,8 @@ import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 export interface TeamExpenseItem {
+  /** Position dans le ticket (1, 2, 3…), unique dans la dépense. */
+  position: number;
   label: string;
   quantity: number;
   unit: Unit;
@@ -101,6 +103,7 @@ function toView(r: Row): TeamExpenseView {
     items: [...(r.receipt_items ?? [])]
       .sort((a, b) => a.position - b.position)
       .map((i) => ({
+        position: i.position,
         label: i.label,
         quantity: Number(i.quantity),
         unit: "piece" as const,
