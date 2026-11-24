@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Button, Field, Notice } from "@/components/ui";
 import { useSession } from "@/features/auth/session-provider";
+import { ChatSection } from "@/features/team-chat/chat-section";
 import { ExpensesSection } from "@/features/team-expenses/expenses-section";
 import {
   myMember,
@@ -184,6 +185,8 @@ export default function TeamScreen() {
       </View>
       {section === "expenses" ? (
         <ExpensesSection team={team} />
+      ) : section === "chat" ? (
+        <ChatSection team={team} myMemberId={me?.id} />
       ) : (
         <View style={s.soon}>
           <Text style={s.muted}>{t("teams.detail.soon")}</Text>
