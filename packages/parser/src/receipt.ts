@@ -23,20 +23,25 @@ export interface ParsedReceipt {
   mismatch: boolean;
 }
 
-/** Prix en fin de ligne : « 3,00 », « -1.00 € », « 2,40 EUR A » (lettre de TVA). */
-const PRICE_END = /(-?)\s*(\d{1,6})[.,](\d{2})\s*(?:€|EUR)?\s*[A-Z]?\s*$/i;
+/**
+ * Prix en fin de ligne : « 3,00 », « -1.00 € », « 2,40 EUR A » (lettre de TVA),
+ * ou à 3 décimales (« 1,859 » : carburant, prix au kilo), arrondi au centime.
+ */
+const PRICE_END = /(-?)\s*(\d{1,6})[.,](\d{2,3})\s*(?:€|EUR)?\s*[A-Z]?\s*$/i;
 /** Ligne de quantité seule : « 2 x 1,20 ». */
-const QTY_ONLY = /^(\d{1,4}(?:[.,]\d{1,3})?)\s*[xX*]\s*(\d{1,6})[.,](\d{2})\s*(?:€|EUR)?$/i;
+const QTY_ONLY = /^(\d{1,4}(?:[.,]\d{1,3})?)\s*[xX*]\s*(\d{1,6})[.,](\d{2,3})\s*(?:€|EUR)?$/i;
 /** Quantité dans le libellé : « YAOURTS 4 X 0,50 ». */
-const QTY_INLINE = /(\d{1,4}(?:[.,]\d{1,3})?)\s*[xX*]\s*(\d{1,6})[.,](\d{2})/;
+const QTY_INLINE = /(\d{1,4}(?:[.,]\d{1,3})?)\s*[xX*]\s*(\d{1,6})[.,](\d{2,3})/;
 const TOTAL = /^(?:TOTAL(?:\s+TTC)?|NET\s+A\s+PAYER|A\s+PAYER|MONTANT(?:\s+DU)?)\b/i;
 const SKIP =
   /\b(?:SOUS[- ]?TOTAL|TVA|CB|CARTE|RENDU|ESP[EÈ]CES|MONNAIE|TICKET|SIRET|TEL|T[EÉ]L[EÉ]PHONE|HT|TTC|PAIEMENT|VISA|MASTERCARD|CH[EÈ]QUE|AVOIR|ARTICLES?|MERCI)\b/i;
 const DISCOUNT = /\b(?:REMISE|R[EÉ]DUC(?:TION)?|PROMO(?:TION)?|BON|COUPON|RABAIS)\b/i;
 const DATE = /(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/;
 
+/** « 1 » et « 859 » → 186 : 3 décimales sont arrondies au centime le plus proche. */
 function cents(euros: string, decimals: string): number {
-  return Number(euros) * 100 + Number(decimals);
+  const fraction = decimals.length === 3 ? Math.round(Number(decimals) / 10) : Number(decimals);
+  return Number(euros) * 100 + fraction;
 }
 
 function parseQuantity(text: string): number {

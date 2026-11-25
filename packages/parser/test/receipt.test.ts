@@ -83,3 +83,27 @@ describe("lecture d'un ticket", () => {
     });
   });
 });
+
+describe("prix à 3 décimales (carburant, prix au kilo)", () => {
+  it("lit un prix seul à 3 décimales, arrondi au centime", () => {
+    const r = parseReceiptText("SANS PLOMB 98      1,859");
+    expect(r.items).toEqual([
+      { label: "Sans plomb 98", quantity: 1, unitPriceCents: 186, totalCents: 186 },
+    ]);
+  });
+
+  it("garde le total de la ligne quand le prix unitaire a 3 décimales", () => {
+    const r = parseReceiptText("GAZOLE 32,15 X 1,859      59,77\nTOTAL 59,77");
+    expect(r.items).toEqual([
+      { label: "Gazole", quantity: 32.15, unitPriceCents: 186, totalCents: 5977 },
+    ]);
+    expect(r.mismatch).toBe(false);
+  });
+
+  it("lit une quantité et un prix à 3 décimales sur la ligne précédente", () => {
+    const r = parseReceiptText("0,750 x 12,995\nJAMBON BLANC      9,75");
+    expect(r.items).toEqual([
+      { label: "Jambon blanc", quantity: 0.75, unitPriceCents: 1300, totalCents: 975 },
+    ]);
+  });
+});
