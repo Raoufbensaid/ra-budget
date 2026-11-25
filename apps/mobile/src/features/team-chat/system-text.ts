@@ -39,6 +39,31 @@ export function systemMessageText(
       return t("teamChat.system.left", { name: member });
     case "member.removed":
       return t("teamChat.system.removed", { name: actor, member });
+    case "settlement.requested":
+      return t("teamChat.system.settlementRequested", { name: actor, amount });
+    case "settlement.disputed":
+      return t("teamChat.system.settlementDisputed", {
+        name: nameOf(d.member_id as string | undefined),
+        reason: (d.reason as string | undefined) ?? "",
+      });
+    case "settlement.validated":
+      return t("teamChat.system.settlementValidated");
+    case "repayment.declared":
+      return t("teamChat.system.repaymentDeclared", {
+        from: (d.from_name as string | undefined) ?? "",
+        to: (d.to_name as string | undefined) ?? "",
+        amount: typeof d.amount_cents === "number" ? formatCents(d.amount_cents, language) : "",
+      });
+    case "repayment.confirmed":
+      return t("teamChat.system.repaymentConfirmed", {
+        from: (d.from_name as string | undefined) ?? "",
+        to: (d.to_name as string | undefined) ?? "",
+        amount: typeof d.amount_cents === "number" ? formatCents(d.amount_cents, language) : "",
+      });
+    case "team.settled":
+      return t("teamChat.system.teamSettled");
+    case "team.archived":
+      return t("teamChat.system.teamArchived", { name: actor });
     default:
       return "";
   }

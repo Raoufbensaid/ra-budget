@@ -15,6 +15,7 @@ import { Button, Field, Notice } from "@/components/ui";
 import { useSession } from "@/features/auth/session-provider";
 import { ChatSection } from "@/features/team-chat/chat-section";
 import { ExpensesSection } from "@/features/team-expenses/expenses-section";
+import { AccountsSection } from "@/features/team-settlement/accounts-section";
 import {
   myMember,
   type Team,
@@ -188,9 +189,7 @@ export default function TeamScreen() {
       ) : section === "chat" ? (
         <ChatSection team={team} myMemberId={me?.id} />
       ) : (
-        <View style={s.soon}>
-          <Text style={s.muted}>{t("teams.detail.soon")}</Text>
-        </View>
+        <AccountsSection team={team} me={me} />
       )}
 
       <View style={s.card}>

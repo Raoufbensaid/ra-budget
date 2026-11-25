@@ -18,12 +18,20 @@ import { font, type Palette, radius, space, useTheme } from "@/theme";
 
 function text(n: AppNotification, t: ReturnType<typeof useTranslation>["t"]): string {
   const title = (n.data.title as string | undefined) ?? "";
-  const amount =
-    typeof n.data.total_cents === "number" ? formatCents(n.data.total_cents, language) : "";
-  if (n.kind === "team_invitation") {
-    return t("notifications.kind.team_invitation", { team: n.data.team_name ?? "" });
-  }
-  return t(`notifications.kind.${n.kind}`, { title, amount });
+  const cents =
+    typeof n.data.amount_cents === "number"
+      ? n.data.amount_cents
+      : typeof n.data.total_cents === "number"
+        ? n.data.total_cents
+        : null;
+  const amount = cents === null ? "" : formatCents(cents, language);
+  return t(`notifications.kind.${n.kind}`, {
+    title,
+    amount,
+    team: (n.data.team_name as string | undefined) ?? "",
+    from: (n.data.from_name as string | undefined) ?? "",
+    to: (n.data.to_name as string | undefined) ?? "",
+  });
 }
 
 export default function NotificationsScreen() {

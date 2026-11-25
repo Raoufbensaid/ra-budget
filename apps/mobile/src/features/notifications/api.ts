@@ -9,7 +9,13 @@ export type NotificationKind =
   | "expense_corrected"
   | "expense_disputed"
   | "expense_validated"
-  | "team_invitation";
+  | "team_invitation"
+  | "settlement_requested"
+  | "settlement_disputed"
+  | "settlement_validated"
+  | "repayment_declared"
+  | "repayment_confirmed"
+  | "team_settled";
 
 export interface AppNotification {
   id: string;

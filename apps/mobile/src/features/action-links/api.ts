@@ -21,14 +21,38 @@ export interface LinkExpense {
   items?: { label: string; quantity: number; total_cents: number }[];
 }
 
+export interface LinkSettlement {
+  total_cents: number;
+  expense_count: number;
+  my_balance_cents: number;
+  balances: {
+    name: string;
+    paid_cents: number;
+    share_cents: number;
+    balance_cents: number;
+    is_me: boolean;
+  }[];
+  transfers: { from: string; to: string; amount_cents: number; involves_me: boolean }[];
+}
+
+export interface LinkRepayment {
+  from_name: string;
+  amount_cents: number;
+  declared_cents: number;
+  confirmed_cents: number;
+  remaining_cents: number;
+}
+
 export interface LinkView {
   state: LinkState;
-  kind?: "approve_expense" | "accept_invitation";
+  kind?: "approve_expense" | "accept_invitation" | "approve_settlement" | "confirm_repayment";
   team_name?: string;
   member_name?: string;
   email?: string;
   inviter?: string | null;
   expense?: LinkExpense;
+  settlement?: LinkSettlement;
+  repayment?: LinkRepayment;
 }
 
 export type DisputeKind = "refuse" | "error" | "correction";
@@ -50,20 +74,22 @@ export function useLinkView(token: string) {
   });
 }
 
-/** Valider ou contester par lien. */
+/** Valider ou contester (dépense, bilan), ou confirmer une réception, par lien. */
 export function useLinkAct(token: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (args: {
-      action: "approve" | "dispute";
+      action: "approve" | "dispute" | "confirm";
       kind?: DisputeKind;
       reason?: string;
+      amountCents?: number;
     }) => {
       const { error } = await supabase.rpc("token_act", {
         p_token: token,
         p_action: args.action,
         p_kind: args.kind ?? null,
         p_reason: args.reason ?? null,
+        p_amount: args.amountCents ?? null,
       });
       if (error) throw error;
     },
@@ -91,6 +117,9 @@ const KNOWN = [
   "link_invalid",
   "stale_version",
   "reason_required",
+  "invalid_amount",
+  "settlement_closed",
+  "repayment_closed",
 ] as const;
 
 /** Texte à afficher pour une erreur d'action par lien. */

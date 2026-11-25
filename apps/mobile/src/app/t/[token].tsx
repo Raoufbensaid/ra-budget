@@ -22,6 +22,7 @@ import {
   LinkText,
   LinkUnavailable,
 } from "@/features/action-links/link-page";
+import { RepaymentLink, SettlementLink } from "@/features/action-links/settlement-link";
 import { language } from "@/i18n";
 import { capitalize, categoryLabel, formatCents, formatDate } from "@/lib/format";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
@@ -142,6 +143,22 @@ export default function ActionLinkScreen() {
   }
 
   const data = view.data;
+  if (data.state === "open" && data.kind === "approve_settlement") {
+    return (
+      <>
+        {screen}
+        <SettlementLink token={token} data={data} />
+      </>
+    );
+  }
+  if (data.state === "open" && data.kind === "confirm_repayment") {
+    return (
+      <>
+        {screen}
+        <RepaymentLink token={token} data={data} />
+      </>
+    );
+  }
   if (data.state !== "open" || data.kind !== "approve_expense" || !data.expense) {
     return (
       <>
@@ -149,7 +166,13 @@ export default function ActionLinkScreen() {
         <LinkUnavailable
           token={token}
           state={data.state === "open" ? "invalid" : data.state}
-          closedText={t("links.expense.closed")}
+          closedText={
+            data.kind === "approve_settlement"
+              ? t("links.settlement.closed")
+              : data.kind === "confirm_repayment"
+                ? t("links.repayment.closed")
+                : t("links.expense.closed")
+          }
         />
       </>
     );
