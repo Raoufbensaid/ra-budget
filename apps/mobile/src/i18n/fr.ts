@@ -556,6 +556,7 @@ export const fr = {
       hello: "Bonjour {{name}},",
       intro:
         "une dépense de la Team « {{team}} » te concerne. Vérifie-la, puis valide-la ou signale un problème.",
+      total: "Total",
       myShare: "Ta part",
       me: "{{name}} (toi)",
       oneUse:

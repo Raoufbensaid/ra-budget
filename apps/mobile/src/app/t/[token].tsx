@@ -43,7 +43,7 @@ function ExpenseSummary({ expense }: { expense: LinkExpense }) {
   return (
     <LinkCard>
       <Text style={s.expenseTitle}>{expense.title}</Text>
-      <Row label={t("teamExpenses.form.amount")} value={money(expense.total_cents)} />
+      <Row label={t("links.expense.total")} value={money(expense.total_cents)} />
       {expense.spent_on ? (
         <Row
           label={t("teamExpenses.detail.date")}

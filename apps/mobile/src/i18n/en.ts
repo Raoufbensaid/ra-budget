@@ -524,6 +524,7 @@ export const en: Messages = {
       hello: "Hi {{name}},",
       intro:
         "an expense in the “{{team}}” Team involves you. Check it, then approve it or report a problem.",
+      total: "Total",
       myShare: "Your share",
       me: "{{name}} (you)",
       oneUse: "This link works only once. If the expense is corrected, you'll get a new link.",

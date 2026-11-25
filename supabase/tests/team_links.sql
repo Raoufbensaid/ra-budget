@@ -5,7 +5,8 @@ begin;
 insert into auth.users (id, email, aud, role, email_confirmed_at)
 values
   ('00000000-0000-4000-a000-00000000000a', 'a@test.local', 'authenticated', 'authenticated', now()),
-  ('00000000-0000-4000-a000-00000000000b', 'b@test.local', 'authenticated', 'authenticated', now());
+  ('00000000-0000-4000-a000-00000000000b', 'b@test.local', 'authenticated', 'authenticated', now()),
+  ('00000000-0000-4000-a000-00000000000c', 'c@test.local', 'authenticated', 'authenticated', now());
 
 create function pg_temp.expect_error(stmt text, code text) returns void
 language plpgsql as $$
@@ -280,6 +281,29 @@ reset role;
 do $$ begin
   if (select count(*) from public.email_outbox where to_email = 'victime@test.local') <> 40 then
     raise exception '10 : plafond de 40 e-mails par jour pour une adresse attendu';
+  end if;
+end $$;
+
+-- Un même expéditeur ne remplit pas seul ce plafond : 20 par adresse au plus.
+insert into public.email_outbox (to_email, kind, payload, sender_user)
+select 'victime2@test.local', 'approval_requested', '{}'::jsonb, '00000000-0000-4000-a000-00000000000b'
+from generate_series(1, 20);
+select pg_temp.login('b');
+set local role authenticated;
+select public.invite_member(public.create_team('Encore B', '🎯'), 'victime2@test.local');
+reset role;
+select pg_temp.login('c');
+set local role authenticated;
+select public.invite_member(public.create_team('Encore C', '🎯'), 'victime2@test.local');
+reset role;
+do $$ begin
+  if (select count(*) from public.email_outbox where to_email = 'victime2@test.local'
+      and sender_user = '00000000-0000-4000-a000-00000000000b') <> 20 then
+    raise exception '10 : 20 e-mails par adresse au plus pour un même expéditeur attendus';
+  end if;
+  if (select count(*) from public.email_outbox where to_email = 'victime2@test.local'
+      and sender_user = '00000000-0000-4000-a000-00000000000c') <> 1 then
+    raise exception '10 : l''invitation de C vers victime2 doit partir';
   end if;
 end $$;
 
