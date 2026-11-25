@@ -210,10 +210,32 @@ reset role;
 select pg_temp.anon();
 set local role anon;
 do $$ begin
-  if public.token_view(current_setting('test.t5')) ->> 'state' <> 'closed' then raise exception '8 : closed attendu'; end if;
+  if public.token_view(current_setting('test.t5')) ->> 'state' not in ('closed', 'revoked') then
+    raise exception '8 : ancien lien inutilisable attendu';
+  end if;
 end $$;
-select pg_temp.expect_error(format('select public.token_act(%L, %L)', current_setting('test.t5'), 'approve'), 'link_closed');
+select pg_temp.expect_error(format('select public.token_act(%L, %L)', current_setting('test.t5'), 'approve'), 'link_revoked');
 reset role;
+do $$ begin
+  if not exists (select 1 from public.email_outbox where to_email = 'eve2@test.local' and kind = 'approve_expense') then
+    raise exception '8 : nouveau lien vers la nouvelle adresse attendu';
+  end if;
+end $$;
+select pg_temp.anon();
+set local role anon;
+reset role;
+
+-- ── 8 bis. Dana reçoit un e-mail plus tard : elle reçoit le lien de la dépense qui l'attend ──
+select pg_temp.login('a');
+set local role authenticated;
+select public.update_guest(current_setting('test.dana')::uuid, 'Dana', 'dana@test.local');
+reset role;
+do $$ begin
+  if not exists (select 1 from public.email_outbox where to_email = 'dana@test.local'
+                 and kind = 'approve_expense' and payload ->> 'expense_id' = current_setting('test.e1')) then
+    raise exception '8 bis : lien de validation pour Dana attendu';
+  end if;
+end $$;
 
 -- ── 9. Membre inscrit : un e-mail avec le lien vers l'application, sans jeton ──
 select pg_temp.login('b');
