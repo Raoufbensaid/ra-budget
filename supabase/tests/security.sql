@@ -15,7 +15,7 @@ declare
   v_auth_expected text := string_agg(x, ',' order by x) from unnest(array[
     'add_guest', 'approve_expense', 'approve_settlement', 'archive_team', 'cancel_expense',
     'cancel_invitation', 'confirm_repayment', 'create_expense', 'create_receipt', 'create_team',
-    'declare_repayment', 'delete_team', 'dispute_expense', 'dispute_settlement', 'invite_member',
+    'declare_repayment', 'delete_team', 'discard_receipt', 'dispute_expense', 'dispute_settlement', 'invite_member',
     'is_team_active', 'is_team_invitee', 'is_team_member', 'is_team_owner', 'leave_team',
     'mark_notifications_read', 'my_confirmed_email', 'my_team_shares',
     'remove_member', 'request_settlement', 'respond_invitation', 'send_message',

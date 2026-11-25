@@ -46,6 +46,23 @@ export async function createReceipt(
   return data as string;
 }
 
+/**
+ * Retire un ticket qui n'a finalement pas servi (la dépense n'a pas pu être
+ * enregistrée) : la fiche du ticket si elle existe, puis la photo. Au mieux :
+ * une erreur ici ne doit pas masquer celle de la dépense.
+ */
+export async function discardReceipt(path: string, receiptId: string | null): Promise<void> {
+  try {
+    if (receiptId) {
+      const { error } = await supabase.rpc("discard_receipt", { p_receipt: receiptId });
+      if (error) return;
+    }
+    await supabase.storage.from("receipts").remove([path]);
+  } catch {
+    // Rien de plus à faire : la photo reste privée à la Team.
+  }
+}
+
 /** Adresse temporaire (1 h) de la photo d'un ticket rattaché à une dépense. */
 export function useReceiptUrl(receiptId: string | null) {
   return useQuery({

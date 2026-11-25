@@ -58,6 +58,40 @@ do $$ begin
 end $$;
 reset role;
 
+-- ── La dépense n'a pas pu être enregistrée : le ticket et sa photo sont retirés ──
+select pg_temp.login('a');
+set local role authenticated;
+select set_config('test.path2', current_setting('test.team') || '/ticket-2.jpg', true);
+insert into storage.objects (bucket_id, name, owner, owner_id)
+values ('receipts', current_setting('test.path2'), auth.uid(), auth.uid()::text);
+select set_config('test.r2', public.create_receipt(current_setting('test.team')::uuid, current_setting('test.path2'), '')::text, true);
+-- Un ticket rattaché à une dépense ne se retire pas.
+select pg_temp.expect_error(format('select public.discard_receipt(%L)', current_setting('test.r')), 'receipt_in_use');
+do $$ begin
+  if public.discard_receipt(current_setting('test.r2')::uuid) <> current_setting('test.path2') then
+    raise exception 'le chemin de la photo retirée est attendu';
+  end if;
+  if exists (select 1 from public.receipts where id = current_setting('test.r2')::uuid) then
+    raise exception 'le ticket doit être retiré';
+  end if;
+end $$;
+-- Suppression des photos (comme le fait le service de stockage) : seulement
+-- une photo à soi qui n'est plus un ticket enregistré.
+select set_config('storage.allow_delete_query', 'true', true);
+do $$
+declare
+  n int;
+begin
+  delete from storage.objects where bucket_id = 'receipts' and name = current_setting('test.path');
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'la photo d''un ticket enregistré ne doit pas être supprimée'; end if;
+  delete from storage.objects where bucket_id = 'receipts' and name = current_setting('test.path2');
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'la photo retirée doit pouvoir être supprimée'; end if;
+end $$;
+select set_config('storage.allow_delete_query', 'false', true);
+reset role;
+
 -- ── Team en clôture : plus de dépôt ni de nouveau ticket ──
 update public.teams set status = 'closing' where id = current_setting('test.team')::uuid;
 select pg_temp.login('a');
@@ -77,6 +111,18 @@ do $$ begin
   then raise exception 'C ne doit pas voir la photo'; end if;
 end $$;
 select pg_temp.expect_error(format('select public.create_receipt(%L, %L, %L)', current_setting('test.team'), current_setting('test.path'), ''), 'forbidden');
+select pg_temp.expect_error(format('select public.discard_receipt(%L)', current_setting('test.r')), 'forbidden');
+-- C ne peut pas supprimer une photo de la Team, même via le service de stockage.
+select set_config('storage.allow_delete_query', 'true', true);
+do $$
+declare
+  n int;
+begin
+  delete from storage.objects where bucket_id = 'receipts' and name = current_setting('test.path');
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'C ne doit pas supprimer la photo'; end if;
+end $$;
+select set_config('storage.allow_delete_query', 'false', true);
 select pg_temp.expect_error(format('select public.create_expense(%L, %L::jsonb)', current_setting('test.cteam'), jsonb_build_object(
   'paid_by', (select id from public.team_members where team_id = current_setting('test.cteam')::uuid and user_id = auth.uid()),
   'title', 'Vol', 'spent_on', '2026-11-12', 'total_cents', 100, 'category_id', null, 'split_mode', 'equal',

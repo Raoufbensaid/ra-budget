@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { useSession } from "@/features/auth/session-provider";
-import { createReceipt, uploadReceipt } from "@/features/receipts/api";
+import { createReceipt, discardReceipt, uploadReceipt } from "@/features/receipts/api";
 import { useOcr } from "@/features/receipts/ocr";
 import { ScanCard, type ScannedReceipt } from "@/features/receipts/scan-card";
 import type { ExpenseDraft } from "@/features/team-expenses/api";
@@ -31,16 +31,23 @@ export default function NewTeamExpenseScreen() {
   const save = useMutation({
     mutationFn: async (draft: ExpenseDraft): Promise<string> => {
       let receiptId: string | null = null;
-      if (scanned) {
-        const path = await uploadReceipt(teamId, scanned.base64, scanned.mime);
-        receiptId = await createReceipt(teamId, path, scanned.text);
+      let path: string | null = null;
+      try {
+        if (scanned) {
+          path = await uploadReceipt(teamId, scanned.base64, scanned.mime);
+          receiptId = await createReceipt(teamId, path, scanned.text);
+        }
+        const { data, error } = await supabase.rpc("create_expense", {
+          p_team: teamId,
+          p_draft: receiptId ? { ...draft, receipt_id: receiptId } : draft,
+        });
+        if (error) throw error;
+        return data as string;
+      } catch (e) {
+        // La dépense n'est pas enregistrée : on ne garde pas sa photo.
+        if (path) await discardReceipt(path, receiptId);
+        throw e;
       }
-      const { data, error } = await supabase.rpc("create_expense", {
-        p_team: teamId,
-        p_draft: receiptId ? { ...draft, receipt_id: receiptId } : draft,
-      });
-      if (error) throw error;
-      return data as string;
     },
     onSuccess: (expenseId) => {
       void client.invalidateQueries({ queryKey: ["team-expenses"] });
