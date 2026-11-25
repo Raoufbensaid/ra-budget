@@ -55,8 +55,9 @@ interface Parts {
   title: string;
   /** Paragraphes en texte brut (échappés pour le HTML). */
   lines: string[];
-  button: string;
-  url: string;
+  /** Bouton facultatif : sans lien, l'e-mail est seulement informatif. */
+  button?: string;
+  url?: string;
   footer: string;
 }
 
@@ -64,16 +65,31 @@ function layout(p: Parts): RenderedEmail {
   const paragraphs = p.lines
     .map((l) => `<p style="margin: 0 0 12px;">${escapeHtml(l)}</p>`)
     .join("\n  ");
+  const button =
+    p.url && p.button
+      ? `<p style="margin: 20px 0;"><a href="${escapeHtml(p.url)}" style="display: inline-block; background: #0e7c66; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 20px; border-radius: 10px;">${escapeHtml(p.button)}</a></p>`
+      : "";
+  const link = p.url
+    ? `<p style="color: #6a6e75; font-size: 12px; word-break: break-all;">${escapeHtml(p.url)}</p>`
+    : "";
   const html = `<div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px; color: #15171a;">
   <p style="color: #0e7c66; font-weight: 700; letter-spacing: 1px; font-size: 12px;">RA BUDGET</p>
   <h1 style="font-size: 20px; margin: 8px 0 16px;">${escapeHtml(p.title)}</h1>
   ${paragraphs}
-  <p style="margin: 20px 0;"><a href="${escapeHtml(p.url)}" style="display: inline-block; background: #0e7c66; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 20px; border-radius: 10px;">${escapeHtml(p.button)}</a></p>
+  ${button}
   <p style="color: #6a6e75; font-size: 13px;">${escapeHtml(p.footer)}</p>
-  <p style="color: #6a6e75; font-size: 12px; word-break: break-all;">${escapeHtml(p.url)}</p>
+  ${link}
 </div>`;
-  const text = [p.title, "", ...p.lines, "", `${p.button} : ${p.url}`, "", p.footer].join("\n");
+  const action = p.url && p.button ? ["", `${p.button} : ${p.url}`] : [];
+  const text = [p.title, "", ...p.lines, ...action, "", p.footer].join("\n");
   return { subject: p.subject, html, text };
+}
+
+/** « on te doit 150,00 € », « tu dois 30,00 € » ou « tu es à l'équilibre ». */
+function balanceText(amount: number): string {
+  if (amount > 0) return `on te doit ${formatEuros(amount)}`;
+  if (amount < 0) return `tu dois ${formatEuros(-amount)}`;
+  return "tu es à l'équilibre";
 }
 
 /** Construit l'e-mail à partir d'une ligne de la file d'envoi. */
@@ -134,6 +150,90 @@ export function renderEmail(email: OutboxEmail, siteUrl: string): RenderedEmail 
         ],
         button: "Ouvrir dans Ra Budget",
         url: `${site}/teams/${teamId}/expenses/${expenseId}`,
+        footer: "Tu reçois cet e-mail parce que tu participes à cette Team.",
+      });
+    }
+    case "approve_settlement": {
+      const name = str(p, "name");
+      return layout({
+        subject: `Valide le bilan de la Team « ${team} »`,
+        title: "Le bilan est prêt",
+        lines: [
+          name ? `Bonjour ${name},` : "Bonjour,",
+          `La Team « ${team} » demande la clôture des comptes. Total des dépenses : ${formatEuros(cents(p, "total_cents"))}.`,
+          `D'après ce bilan, ${balanceText(cents(p, "balance_cents"))}.`,
+          "Ouvre le lien pour vérifier le bilan et les virements proposés, puis valide-le ou signale un problème. Pas besoin de compte.",
+        ],
+        button: "Voir le bilan",
+        url: `${site}/t/${token(p)}`,
+        footer:
+          "Ce lien ne sert qu'une fois et reste valable 7 jours. Ne le transfère pas : il agit en ton nom.",
+      });
+    }
+    case "settlement_requested": {
+      return layout({
+        subject: `Bilan à valider : Team « ${team} »`,
+        title: "Le bilan est prêt",
+        lines: [
+          `La Team « ${team} » demande la clôture des comptes. Total des dépenses : ${formatEuros(cents(p, "total_cents"))}.`,
+          `D'après ce bilan, ${balanceText(cents(p, "balance_cents"))}. Vérifie-le et valide-le dans Ra Budget.`,
+        ],
+        button: "Ouvrir dans Ra Budget",
+        url: `${site}/teams/${encodeURIComponent(str(p, "team_id"))}`,
+        footer: "Tu reçois cet e-mail parce que tu participes à cette Team.",
+      });
+    }
+    case "repayment_due": {
+      const to = str(p, "to_name", "un membre");
+      const amount = formatEuros(cents(p, "amount_cents"));
+      const name = str(p, "name");
+      const guest = p.guest === true;
+      return layout({
+        subject: `Tu dois ${amount} à ${to} (${team})`,
+        title: "Le bilan est validé",
+        lines: [
+          name ? `Bonjour ${name},` : "Bonjour,",
+          `Tout le monde a validé le bilan de la Team « ${team} ». Pour solder les comptes, tu dois envoyer ${amount} à ${to}.`,
+          guest
+            ? `Envoie-lui l'argent par le moyen de ton choix (virement, espèces…). ${to} confirmera la réception.`
+            : `Envoie-lui l'argent par le moyen de ton choix, puis indique-le dans Ra Budget. ${to} confirmera la réception.`,
+        ],
+        button: guest ? undefined : "Ouvrir dans Ra Budget",
+        url: guest ? undefined : `${site}/teams/${encodeURIComponent(str(p, "team_id"))}`,
+        footer: "Tu reçois cet e-mail parce que tu participes à cette Team.",
+      });
+    }
+    case "confirm_repayment": {
+      const from = str(p, "from_name", "Un membre");
+      const declared = cents(p, "declared_cents");
+      const name = str(p, "name");
+      return layout({
+        subject: `As-tu reçu l'argent de ${from} ? (${team})`,
+        title: "Confirme ce que tu as reçu",
+        lines: [
+          name ? `Bonjour ${name},` : "Bonjour,",
+          `Pour solder la Team « ${team} », ${from} doit te rembourser ${formatEuros(cents(p, "amount_cents"))}. Reste à recevoir : ${formatEuros(cents(p, "remaining_cents"))}.`,
+          ...(declared > 0 ? [`${from} indique t'avoir envoyé ${formatEuros(declared)}.`] : []),
+          "Quand l'argent est arrivé, ouvre le lien et indique le montant reçu, même partiel.",
+        ],
+        button: "Confirmer la réception",
+        url: `${site}/t/${token(p)}`,
+        footer:
+          "Ce lien ne sert qu'une fois et reste valable 7 jours. Après une réception partielle, tu en recevras un nouveau pour le reste.",
+      });
+    }
+    case "repayment_declared": {
+      const from = str(p, "from_name", "Un membre");
+      const amount = formatEuros(cents(p, "amount_cents"));
+      return layout({
+        subject: `${from} indique t'avoir envoyé ${amount} (${team})`,
+        title: "Un remboursement est en route",
+        lines: [
+          `${from} indique t'avoir envoyé ${amount} pour la Team « ${team} ».`,
+          "Quand tu l'as bien reçu, confirme-le dans Ra Budget : seule ta confirmation compte.",
+        ],
+        button: "Ouvrir dans Ra Budget",
+        url: `${site}/teams/${encodeURIComponent(str(p, "team_id"))}`,
         footer: "Tu reçois cet e-mail parce que tu participes à cette Team.",
       });
     }

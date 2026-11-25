@@ -106,4 +106,103 @@ describe("renderEmail", () => {
       "missing_token",
     );
   });
+  it("bilan pour un invité : lien /t/<jeton> et son solde", () => {
+    const m = renderEmail(
+      {
+        kind: "approve_settlement",
+        payload: {
+          token: "s1",
+          team_name: "Voyage",
+          name: "Eve",
+          total_cents: 60000,
+          balance_cents: -3000,
+        },
+      },
+      site,
+    );
+    expect(m.subject).toBe("Valide le bilan de la Team « Voyage »");
+    expect(m.html).toContain("https://ra-budget.pages.dev/t/s1");
+    expect(m.text).toContain("600,00 €");
+    expect(m.text).toContain("tu dois 30,00 €");
+  });
+
+  it("bilan pour un membre : lien vers la Team dans l'application", () => {
+    const m = renderEmail(
+      {
+        kind: "settlement_requested",
+        payload: { team_id: "t1", team_name: "Voyage", total_cents: 60000, balance_cents: 15000 },
+      },
+      site,
+    );
+    expect(m.html).toContain("https://ra-budget.pages.dev/teams/t1");
+    expect(m.text).toContain("on te doit 150,00 €");
+  });
+
+  it("somme à rembourser : sans bouton pour un invité", () => {
+    const guest = renderEmail(
+      {
+        kind: "repayment_due",
+        payload: {
+          team_id: "t1",
+          team_name: "Voyage",
+          name: "Eve",
+          to_name: "Raouf",
+          amount_cents: 3000,
+          guest: true,
+        },
+      },
+      site,
+    );
+    expect(guest.subject).toBe("Tu dois 30,00 € à Raouf (Voyage)");
+    expect(guest.html).not.toContain("<a ");
+    const member = renderEmail(
+      {
+        kind: "repayment_due",
+        payload: {
+          team_id: "t1",
+          team_name: "Voyage",
+          name: "B",
+          to_name: "Raouf",
+          amount_cents: 3000,
+          guest: false,
+        },
+      },
+      site,
+    );
+    expect(member.html).toContain("https://ra-budget.pages.dev/teams/t1");
+  });
+
+  it("réception pour un invité créancier : reste dû et lien de confirmation", () => {
+    const m = renderEmail(
+      {
+        kind: "confirm_repayment",
+        payload: {
+          token: "r1",
+          team_name: "Coloc",
+          name: "Zoé",
+          from_name: "Raouf",
+          amount_cents: 1000,
+          declared_cents: 1000,
+          remaining_cents: 600,
+        },
+      },
+      site,
+    );
+    expect(m.subject).toBe("As-tu reçu l'argent de Raouf ? (Coloc)");
+    expect(m.html).toContain("https://ra-budget.pages.dev/t/r1");
+    expect(m.text).toContain("6,00 €");
+    expect(m.text).toContain("indique t'avoir envoyé 10,00 €");
+  });
+
+  it("déclaration reçue par un membre créancier", () => {
+    const m = renderEmail(
+      {
+        kind: "repayment_declared",
+        payload: { team_id: "t1", team_name: "Voyage", from_name: "Dana", amount_cents: 10000 },
+      },
+      site,
+    );
+    expect(m.subject).toBe("Dana indique t'avoir envoyé 100,00 € (Voyage)");
+    expect(m.html).toContain("https://ra-budget.pages.dev/teams/t1");
+  });
 });
