@@ -102,6 +102,7 @@ select pg_temp.anon();
 set local role anon;
 do $$ declare v jsonb := public.token_view(current_setting('test.t1')); begin
   if v ->> 'state' <> 'open' or v ->> 'kind' <> 'approve_expense' then raise exception '3 : ouvert attendu, obtenu %', v; end if;
+  if (v -> 'expense' ->> 'i_paid')::boolean is distinct from false then raise exception '3 : i_paid faux attendu'; end if;
   if (v -> 'expense' ->> 'total_cents')::int <> 1200 or (v -> 'expense' ->> 'my_share_cents')::int <> 400 then
     raise exception '3 : total 1200 et part 400 attendus, obtenu %', v;
   end if;
@@ -236,7 +237,29 @@ do $$ begin
   end if;
 end $$;
 
--- ── 10. File d'envoi : réservée au serveur, lien effacé après l'envoi ──
+-- ── 10. Limites anti-abus : 20 invitations par jour et par personne, 10 e-mails par jour et par adresse ──
+select pg_temp.login('a');
+set local role authenticated;
+select set_config('test.team2', public.create_team('Spam', '📣')::text, true);
+do $$ begin
+  for i in 1..25 loop
+    perform public.invite_member(current_setting('test.team2')::uuid, format('x%s@test.local', i));
+  end loop;
+  for i in 1..12 loop
+    perform public.cancel_invitation(public.invite_member(current_setting('test.team2')::uuid, 'cible@test.local'));
+  end loop;
+end $$;
+reset role;
+do $$ begin
+  if (select count(*) from public.email_outbox where kind = 'team_invitation'
+      and sender_user = '00000000-0000-4000-a000-00000000000a') > 20 then
+    raise exception '10 : 20 invitations par jour au plus attendues';
+  end if;
+  if (select count(*) from public.email_outbox where to_email = 'cible@test.local') > 10 then
+    raise exception '10 : 10 e-mails par jour au plus pour une adresse attendus';
+  end if;
+end $$;
+-- ── 11. File d'envoi : réservée au serveur, lien effacé après l'envoi ──
 set local role service_role;
 do $$
 declare

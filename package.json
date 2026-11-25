@@ -9,7 +9,8 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "lint": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "test:emails": "vitest run supabase/functions"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.8",
