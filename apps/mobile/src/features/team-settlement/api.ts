@@ -53,6 +53,8 @@ export interface Settlement {
   status: "pending" | "approved" | "superseded";
   totalCents: number;
   expenseCount: number;
+  /** Dépenses figées dans le bilan. */
+  expenseIds: string[];
   createdAt: string;
   balances: SettlementBalance[];
   approvals: SettlementApproval[];
@@ -113,6 +115,9 @@ function toSettlement(r: Row): Settlement {
     status: r.status,
     totalCents: Number(r.total_cents),
     expenseCount: Array.isArray(r.expenses) ? r.expenses.length : 0,
+    expenseIds: Array.isArray(r.expenses)
+      ? r.expenses.map((e) => String((e as { id?: unknown }).id ?? ""))
+      : [],
     createdAt: r.created_at,
     balances: [...(r.settlement_balances ?? [])]
       .sort((a, b) => a.position - b.position)

@@ -40,7 +40,8 @@
           "photosPermission": "Ra Budget a besoin de tes photos pour lire tes tickets de caisse.",
           "cameraPermission": "Ra Budget a besoin de l'appareil photo pour photographier tes tickets de caisse."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

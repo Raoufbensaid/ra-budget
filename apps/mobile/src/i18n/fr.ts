@@ -199,6 +199,7 @@ export const fr = {
       cancelInvitation: "Annuler l'invitation à {{email}}",
       confirmCancelInvitation: "Annuler l'invitation envoyée à {{email}} ?",
       sections: {
+        members: "Membres",
         chat: "Discussion",
         expenses: "Dépenses",
         accounts: "Comptes",
@@ -466,6 +467,7 @@ export const fr = {
     photoSmaller: "Réduire la photo du ticket",
   },
   history: {
+    teamShare: "Ta part · {{team}} (total {{total}})",
     title: "Historique",
     month: "Ce mois-ci",
     empty: "Aucune dépense pour l'instant. Ajoute ta première dépense dans l'onglet « Ajouter ».",
@@ -487,6 +489,11 @@ export const fr = {
     passwordSaved: "Mot de passe enregistré. Tu peux maintenant te connecter avec.",
     confirmWithCode:
       "Par sécurité, saisis le code envoyé à {{email}}, puis touche à nouveau « Enregistrer le mot de passe ».",
+    displayName: "Pseudo",
+    displayNamePlaceholder: "Le nom que verront tes Teams",
+    saveDisplayName: "Enregistrer le pseudo",
+    displayNameSaved: "Pseudo enregistré : il est aussi mis à jour dans tes Teams.",
+    displayNameError: "Le pseudo n'a pas pu être enregistré (1 à 60 caractères).",
     signOut: "Se déconnecter",
   },
   save: {
@@ -618,6 +625,9 @@ export const fr = {
       doneAll: "Merci, tout est reçu !",
       donePartial: "Merci, c'est noté ! Reste à recevoir : {{rest}}.",
     },
+    detailTitle: "Détail des dépenses",
+    noExpense: "Aucune dépense validée pour l'instant.",
+    paidBy: "payé par {{name}}",
     errors: {
       link_used: "Tu as déjà répondu avec ce lien.",
       link_revoked: "Ce lien a été remplacé par un plus récent : regarde le dernier e-mail reçu.",
@@ -722,6 +732,10 @@ export const fr = {
       not_settled: "La Team doit être soldée avant d'être archivée.",
       generic: "Une erreur est survenue. Réessaie dans un instant.",
     },
+  },
+  datePicker: {
+    open: "Choisir la date dans le calendrier",
+    choose: "Choisir cette date",
   },
   done: {
     title: "Dépense enregistrée",

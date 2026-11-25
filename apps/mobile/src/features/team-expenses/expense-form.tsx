@@ -1,9 +1,10 @@
 import { CATEGORY_IDS, type CategoryId } from "@ra/core";
 import { buildShares, type SplitMode } from "@ra/team";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react-native";
+import { CalendarDays, Check, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { DatePicker } from "@/components/date-picker";
 import { Button, Field, Notice } from "@/components/ui";
 import type { TeamMember } from "@/features/teams/api";
 import { language } from "@/i18n";
@@ -104,6 +105,7 @@ export function ExpenseForm({
         ? centsToText(prefillTotal)
         : "",
   );
+  const [picking, setPicking] = useState(false);
   const [date, setDate] = useState(
     initial?.spentOn ?? (prefill?.spentOn && prefill.spentOn <= today ? prefill.spentOn : today),
   );
@@ -210,12 +212,20 @@ export function ExpenseForm({
           >
             <ChevronLeft size={20} color={c.text} />
           </Pressable>
-          <Text style={s.dateText}>
-            {formatDate(date, language, {
-              today: t("expense.today"),
-              yesterday: t("expense.yesterday"),
-            })}
-          </Text>
+          <Pressable
+            onPress={() => setPicking(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t("datePicker.open")}
+            style={s.dateButton}
+          >
+            <CalendarDays size={18} color={c.accent} />
+            <Text style={s.dateText}>
+              {formatDate(date, language, {
+                today: t("expense.today"),
+                yesterday: t("expense.yesterday"),
+              })}
+            </Text>
+          </Pressable>
           <Pressable
             onPress={() => setDate(shiftDay(date, 1))}
             disabled={date >= today}
@@ -226,6 +236,13 @@ export function ExpenseForm({
           >
             <ChevronRight size={20} color={c.text} />
           </Pressable>
+          <DatePicker
+            value={date}
+            max={today}
+            open={picking}
+            onChange={setDate}
+            onClose={() => setPicking(false)}
+          />
         </View>
       </View>
 
@@ -374,6 +391,14 @@ const styles = (c: Palette) =>
       padding: space.xs,
     },
     dateArrow: { padding: space.sm },
+    dateButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: space.sm,
+      paddingVertical: space.sm,
+    },
     dateText: {
       color: c.text,
       fontSize: font.body,

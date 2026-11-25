@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Field, Notice } from "@/components/ui";
 import { authErrorMessage } from "@/features/auth/auth-errors";
 import { useSession } from "@/features/auth/session-provider";
+import { DisplayNameCard } from "@/features/profile/display-name-card";
 import { supabase } from "@/lib/supabase";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
 
@@ -66,6 +67,8 @@ export default function ProfileScreen() {
           <Text style={s.section}>{t("profile.account")}</Text>
           <Text style={s.email}>{session?.user.email}</Text>
         </View>
+
+        <DisplayNameCard />
 
         <View style={s.card}>
           <Field

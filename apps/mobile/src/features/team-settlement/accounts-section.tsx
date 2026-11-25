@@ -3,6 +3,7 @@
  * clôture (bilan à valider), remboursements et Team soldée.
  */
 import { computeBalances, planRepayments, type TeamExpense } from "@ra/team";
+import { useRouter } from "expo-router";
 import {
   Archive,
   ArrowRight,
@@ -15,13 +16,13 @@ import {
 } from "lucide-react-native";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button, Field, Notice } from "@/components/ui";
-import { useTeamExpenses } from "@/features/team-expenses/api";
+import { type TeamExpenseView, useTeamExpenses } from "@/features/team-expenses/api";
 import type { Team, TeamMember } from "@/features/teams/api";
 import { language } from "@/i18n";
 import { confirm } from "@/lib/confirm";
-import { formatCents, parseEuros } from "@/lib/format";
+import { capitalize, formatCents, formatDate, parseEuros } from "@/lib/format";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
 import {
   type Repayment,
@@ -143,6 +144,52 @@ function TransfersList({
   );
 }
 
+/** Détail des dépenses : qui a payé, combien, et la part de chaque participant. */
+function ExpensesDetail({
+  expenses,
+  nameOf,
+  meId,
+}: {
+  expenses: TeamExpenseView[];
+  nameOf: (id: string) => string;
+  meId?: string;
+}) {
+  const { t } = useTranslation();
+  const c = useTheme();
+  const s = styles(c);
+  const router = useRouter();
+  if (expenses.length === 0) return <Text style={s.muted}>{t("settlement.noExpense")}</Text>;
+  return (
+    <View style={s.rows}>
+      {expenses.map((e) => (
+        <Pressable
+          key={e.id}
+          onPress={() => router.push(`/teams/${e.teamId}/expenses/${e.id}`)}
+          accessibilityRole="button"
+          style={({ pressed }) => [s.expense, pressed && { opacity: 0.6 }]}
+        >
+          <View style={s.transfer}>
+            <View style={s.flex}>
+              <Text style={s.name}>{e.title}</Text>
+              <Text style={s.muted}>
+                {`${capitalize(formatDate(e.spentOn, language, { today: t("expense.today"), yesterday: t("expense.yesterday") }))} · ${t("settlement.paidBy", { name: nameOf(e.paidBy) })}`}
+              </Text>
+            </View>
+            <Text style={s.strong}>{money(e.totalCents)}</Text>
+          </View>
+          <View style={s.shares}>
+            {e.beneficiaries.map((b) => (
+              <Text key={b.memberId} style={[s.share, b.memberId === meId && { color: c.accent }]}>
+                {`${b.memberId === meId ? t("settlement.me", { name: nameOf(b.memberId) }) : nameOf(b.memberId)} ${money(b.shareCents)}`}
+              </Text>
+            ))}
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 // ─────────────────────────── Team active : tableau de bord et demande ───────────────────────────
 
 function LiveAccounts({
@@ -238,6 +285,10 @@ function LiveAccounts({
         />
       </Card>
 
+      <Card title={t("settlement.detailTitle")}>
+        <ExpensesDetail expenses={validated} nameOf={nameOf} meId={me?.id} />
+      </Card>
+
       {me ? (
         <Card title={t("settlement.closeTitle")}>
           <Text style={s.hint}>{t("settlement.closeHint")}</Text>
@@ -313,6 +364,9 @@ function SettlementReview({
           }))}
           nameOf={nameOf}
         />
+      </Card>
+      <Card title={t("settlement.detailTitle")}>
+        <FrozenExpenses team={team} settlement={settlement} nameOf={nameOf} meId={me?.id} />
       </Card>
 
       <Card title={t("settlement.approvalsTitle", { done, total: required.length })}>
@@ -723,8 +777,31 @@ export function AccountsSection({ team, me }: { team: Team; me: TeamMember | und
       <Card title={t("settlement.balancesTitle")}>
         <BalancesTable rows={settlement.balances} nameOf={nameOf} meId={me?.id} />
       </Card>
+      <Card title={t("settlement.detailTitle")}>
+        <FrozenExpenses team={team} settlement={settlement} nameOf={nameOf} meId={me?.id} />
+      </Card>
     </View>
   );
+}
+
+/** Dépenses incluses dans un bilan figé. */
+function FrozenExpenses({
+  team,
+  settlement,
+  nameOf,
+  meId,
+}: {
+  team: Team;
+  settlement: Settlement;
+  nameOf: (id: string) => string;
+  meId?: string;
+}) {
+  const c = useTheme();
+  const expenses = useTeamExpenses(team.id);
+  if (expenses.isPending) return <ActivityIndicator color={c.accent} />;
+  const ids = new Set(settlement.expenseIds);
+  const list = (expenses.data ?? []).filter((e) => ids.has(e.id));
+  return <ExpensesDetail expenses={list} nameOf={nameOf} meId={meId} />;
 }
 
 const styles = (c: Palette) =>
@@ -749,6 +826,14 @@ const styles = (c: Palette) =>
     name: { color: c.text, fontSize: font.small, fontWeight: "600" },
     balance: { fontSize: font.small, fontWeight: "700", textAlign: "right" },
     rows: { gap: space.sm },
+    expense: {
+      gap: space.xs,
+      paddingTop: space.sm,
+      borderTopColor: c.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    shares: { flexDirection: "row", flexWrap: "wrap", columnGap: space.md, rowGap: 2 },
+    share: { color: c.textMuted, fontSize: font.tiny },
     balanceRow: { flexDirection: "row", alignItems: "center", gap: space.md },
     transfer: { flexDirection: "row", alignItems: "center", gap: space.md },
     mine: {

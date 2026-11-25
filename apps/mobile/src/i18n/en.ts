@@ -198,6 +198,7 @@ export const en: Messages = {
       cancelInvitation: "Cancel the invitation to {{email}}",
       confirmCancelInvitation: "Cancel the invitation sent to {{email}}?",
       sections: {
+        members: "Members",
         chat: "Chat",
         expenses: "Expenses",
         accounts: "Balances",
@@ -458,6 +459,7 @@ export const en: Messages = {
     photoSmaller: "Shrink the receipt photo",
   },
   history: {
+    teamShare: "Your share · {{team}} (total {{total}})",
     title: "History",
     month: "This month",
     empty: "No expenses yet. Add your first one in the « Add » tab.",
@@ -479,6 +481,11 @@ export const en: Messages = {
     passwordSaved: "Password saved. You can now sign in with it.",
     confirmWithCode:
       "For security, enter the code sent to {{email}}, then tap « Save password » again.",
+    displayName: "Nickname",
+    displayNamePlaceholder: "The name your Teams will see",
+    saveDisplayName: "Save nickname",
+    displayNameSaved: "Nickname saved: it is also updated in your Teams.",
+    displayNameError: "The nickname couldn't be saved (1 to 60 characters).",
     signOut: "Sign out",
   },
   save: {
@@ -585,6 +592,9 @@ export const en: Messages = {
       doneAll: "Thanks, everything is received!",
       donePartial: "Thanks, noted! Left to receive: {{rest}}.",
     },
+    detailTitle: "Expense details",
+    noExpense: "No approved expense yet.",
+    paidBy: "paid by {{name}}",
     errors: {
       link_used: "You already answered with this link.",
       link_revoked: "This link was replaced by a newer one: check the latest email.",
@@ -686,6 +696,10 @@ export const en: Messages = {
       not_settled: "The Team must be settled before it can be archived.",
       generic: "Something went wrong. Try again in a moment.",
     },
+  },
+  datePicker: {
+    open: "Pick the date in the calendar",
+    choose: "Choose this date",
   },
   done: {
     title: "Expense saved",

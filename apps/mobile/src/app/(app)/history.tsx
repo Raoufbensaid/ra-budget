@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,6 +19,7 @@ import {
   useDeletePurchase,
   usePurchases,
 } from "@/features/purchases/api";
+import { type TeamShare, useTeamShares } from "@/features/team-shares/api";
 import { language } from "@/i18n";
 import { confirm } from "@/lib/confirm";
 import {
@@ -29,6 +31,9 @@ import {
   isoDate,
 } from "@/lib/format";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
+
+/** Une ligne de l'historique : ta dépense, ou ta part d'une dépense de Team. */
+type Entry = { kind: "purchase"; purchase: SavedPurchase } | { kind: "team"; share: TeamShare };
 
 function PurchaseCard({ purchase }: { purchase: SavedPurchase }) {
   const { t } = useTranslation();
@@ -108,33 +113,78 @@ function PurchaseCard({ purchase }: { purchase: SavedPurchase }) {
   );
 }
 
+/** Ta part d'une dépense de Team validée ; un appui ouvre la dépense. */
+function TeamShareCard({ share }: { share: TeamShare }) {
+  const { t } = useTranslation();
+  const c = useTheme();
+  const s = styles(c);
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.push(`/teams/${share.teamId}/expenses/${share.expenseId}`)}
+      accessibilityRole="button"
+      style={({ pressed }) => [s.card, pressed && { opacity: 0.7 }]}
+    >
+      <View style={s.cardHeader}>
+        <Text style={s.teamIcon}>{share.teamIcon}</Text>
+        <View style={s.flex}>
+          <Text style={s.cardTitle} numberOfLines={1}>
+            {share.title}
+          </Text>
+          <Text style={s.meta}>
+            {t("history.teamShare", {
+              team: share.teamName,
+              total: formatCents(share.totalCents, language),
+            })}
+          </Text>
+        </View>
+        <Text style={s.amount}>{formatCents(share.shareCents, language)}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function HistoryScreen() {
   const { t } = useTranslation();
   const c = useTheme();
   const s = styles(c);
   const query = usePurchases();
+  const sharesQuery = useTeamShares();
   const purchases = query.data ?? [];
+  const shares = sharesQuery.data ?? [];
 
   const monthTotal = useMemo(() => {
     const month = isoDate(new Date()).slice(0, 7);
-    return purchases
+    const own = purchases
       .filter((p) => p.purchased_on.startsWith(month))
       .reduce((sum, p) => sum + purchaseTotal(p), 0);
-  }, [purchases]);
+    const team = shares
+      .filter((sh) => sh.spentOn.startsWith(month))
+      .reduce((sum, sh) => sum + sh.shareCents, 0);
+    return own + team;
+  }, [purchases, shares]);
 
   // Regroupement par jour, du plus récent au plus ancien.
   const days = useMemo(() => {
-    const map = new Map<string, SavedPurchase[]>();
-    for (const p of purchases) map.set(p.purchased_on, [...(map.get(p.purchased_on) ?? []), p]);
-    return [...map.entries()];
-  }, [purchases]);
+    const map = new Map<string, Entry[]>();
+    const add = (day: string, entry: Entry) => map.set(day, [...(map.get(day) ?? []), entry]);
+    for (const p of purchases) add(p.purchased_on, { kind: "purchase", purchase: p });
+    for (const sh of shares) add(sh.spentOn, { kind: "team", share: sh });
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [purchases, shares]);
 
   return (
     <SafeAreaView style={s.screen} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={s.page}
         refreshControl={
-          <RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} />
+          <RefreshControl
+            refreshing={query.isRefetching}
+            onRefresh={() => {
+              void query.refetch();
+              void sharesQuery.refetch();
+            }}
+          />
         }
       >
         <Text style={s.brand}>RA BUDGET</Text>
@@ -156,7 +206,7 @@ export default function HistoryScreen() {
             />
           </View>
         ) : null}
-        {query.isSuccess && purchases.length === 0 ? (
+        {query.isSuccess && purchases.length === 0 && shares.length === 0 ? (
           <Text style={s.empty}>{t("history.empty")}</Text>
         ) : null}
 
@@ -168,9 +218,13 @@ export default function HistoryScreen() {
                 yesterday: t("expense.yesterday"),
               })}
             </Text>
-            {list.map((p) => (
-              <PurchaseCard key={p.id} purchase={p} />
-            ))}
+            {list.map((entry) =>
+              entry.kind === "purchase" ? (
+                <PurchaseCard key={entry.purchase.id} purchase={entry.purchase} />
+              ) : (
+                <TeamShareCard key={`team-${entry.share.expenseId}`} share={entry.share} />
+              ),
+            )}
           </View>
         ))}
       </ScrollView>
@@ -189,6 +243,7 @@ const styles = (c: Palette) =>
       alignSelf: "center",
     },
     flex: { flex: 1 },
+    teamIcon: { fontSize: 22 },
     gap: { gap: space.sm },
     brand: {
       color: c.accent,

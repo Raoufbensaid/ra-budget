@@ -37,7 +37,7 @@ import { confirm } from "@/lib/confirm";
 import { formatDate } from "@/lib/format";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
 
-type Section = "chat" | "expenses" | "accounts";
+type Section = "members" | "chat" | "expenses" | "accounts";
 
 function RenameForm({ team, onDone }: { team: Team; onDone: () => void }) {
   const { t } = useTranslation();
@@ -132,6 +132,10 @@ export default function TeamScreen() {
     <ScrollView
       contentContainerStyle={s.page}
       keyboardShouldPersistTaps="handled"
+      // Le champ en cours de saisie reste visible au-dessus du clavier (iOS ;
+      // Android redimensionne déjà l'écran).
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
       refreshControl={
         <RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} />
       }
@@ -170,7 +174,7 @@ export default function TeamScreen() {
       )}
 
       <View style={s.tabs} accessibilityRole="tablist">
-        {(["chat", "expenses", "accounts"] as const).map((key) => (
+        {(["members", "chat", "expenses", "accounts"] as const).map((key) => (
           <Pressable
             key={key}
             onPress={() => setSection(key)}
@@ -188,109 +192,126 @@ export default function TeamScreen() {
         <ExpensesSection team={team} />
       ) : section === "chat" ? (
         <ChatSection team={team} myMemberId={me?.id} />
-      ) : (
+      ) : section === "accounts" ? (
         <AccountsSection team={team} me={me} />
-      )}
+      ) : (
+        <>
+          <View style={s.card}>
+            <Text style={s.cardTitle}>{t("teams.detail.membersTitle")}</Text>
+            {members.map((m) =>
+              editingGuest === m.id ? (
+                <GuestForm
+                  key={m.id}
+                  teamId={team.id}
+                  guest={m}
+                  onDone={() => setEditingGuest(null)}
+                />
+              ) : (
+                <MemberRow
+                  key={m.id}
+                  member={m}
+                  isMe={m.id === me?.id}
+                  onEdit={
+                    isOwner && editable && m.role === "guest"
+                      ? () => setEditingGuest(m.id)
+                      : undefined
+                  }
+                  onRemove={
+                    isOwner && editable && m.role !== "owner"
+                      ? () =>
+                          confirm(
+                            t("teams.member.confirmRemove", { name: m.displayName }),
+                            t("teams.detail.yes"),
+                            t("teams.detail.cancel"),
+                            () => removeMember.mutate({ p_member: m.id }),
+                          )
+                      : undefined
+                  }
+                />
+              ),
+            )}
+            {team.invitations.length > 0 ? (
+              <View style={s.invitations}>
+                <Text style={s.subTitle}>{t("teams.detail.invitedTitle")}</Text>
+                {team.invitations.map((inv) => (
+                  <View key={inv.id} style={s.invitationRow}>
+                    <Text style={[s.muted, s.flex]} numberOfLines={1}>
+                      {t("teams.detail.invitedEmail", { email: inv.email })}
+                    </Text>
+                    {isOwner ? (
+                      <Pressable
+                        onPress={() =>
+                          confirm(
+                            t("teams.detail.confirmCancelInvitation", { email: inv.email }),
+                            t("teams.detail.yes"),
+                            t("teams.detail.cancel"),
+                            () => cancelInvitation.mutate({ p_invitation: inv.id }),
+                          )
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel={t("teams.detail.cancelInvitation", {
+                          email: inv.email,
+                        })}
+                        hitSlop={10}
+                      >
+                        <MailX size={16} color={c.danger} />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
+            {actionError ? <Notice tone="error" text={teamErrorMessage(actionError, t)} /> : null}
+          </View>
 
-      <View style={s.card}>
-        <Text style={s.cardTitle}>{t("teams.detail.membersTitle")}</Text>
-        {members.map((m) =>
-          editingGuest === m.id ? (
-            <GuestForm key={m.id} teamId={team.id} guest={m} onDone={() => setEditingGuest(null)} />
-          ) : (
-            <MemberRow
-              key={m.id}
-              member={m}
-              isMe={m.id === me?.id}
-              onEdit={
-                isOwner && editable && m.role === "guest" ? () => setEditingGuest(m.id) : undefined
-              }
-              onRemove={
-                isOwner && editable && m.role !== "owner"
-                  ? () =>
-                      confirm(
-                        t("teams.member.confirmRemove", { name: m.displayName }),
-                        t("teams.detail.yes"),
-                        t("teams.detail.cancel"),
-                        () => removeMember.mutate({ p_member: m.id }),
-                      )
-                  : undefined
+          {isOwner && editable ? (
+            <>
+              <InviteForm teamId={team.id} />
+              <GuestForm teamId={team.id} />
+            </>
+          ) : null}
+
+          {isOwner ? (
+            <Button
+              variant="danger"
+              label={t("teams.detail.delete")}
+              icon={<Trash2 size={16} color={c.danger} />}
+              loading={remove.isPending}
+              onPress={() =>
+                confirm(
+                  t("teams.detail.confirmDelete", { name: team.name }),
+                  t("teams.detail.delete"),
+                  t("teams.detail.cancel"),
+                  () =>
+                    remove.mutate(
+                      { p_team: team.id },
+                      { onSuccess: () => router.replace("/teams") },
+                    ),
+                )
               }
             />
-          ),
-        )}
-        {team.invitations.length > 0 ? (
-          <View style={s.invitations}>
-            <Text style={s.subTitle}>{t("teams.detail.invitedTitle")}</Text>
-            {team.invitations.map((inv) => (
-              <View key={inv.id} style={s.invitationRow}>
-                <Text style={[s.muted, s.flex]} numberOfLines={1}>
-                  {t("teams.detail.invitedEmail", { email: inv.email })}
-                </Text>
-                {isOwner ? (
-                  <Pressable
-                    onPress={() =>
-                      confirm(
-                        t("teams.detail.confirmCancelInvitation", { email: inv.email }),
-                        t("teams.detail.yes"),
-                        t("teams.detail.cancel"),
-                        () => cancelInvitation.mutate({ p_invitation: inv.id }),
-                      )
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel={t("teams.detail.cancelInvitation", { email: inv.email })}
-                    hitSlop={10}
-                  >
-                    <MailX size={16} color={c.danger} />
-                  </Pressable>
-                ) : null}
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {actionError ? <Notice tone="error" text={teamErrorMessage(actionError, t)} /> : null}
-      </View>
-
-      {isOwner && editable ? (
-        <>
-          <InviteForm teamId={team.id} />
-          <GuestForm teamId={team.id} />
+          ) : me ? (
+            <Button
+              variant="danger"
+              label={t("teams.detail.leave")}
+              icon={<LogOut size={16} color={c.danger} />}
+              loading={leave.isPending}
+              onPress={() =>
+                confirm(
+                  t("teams.detail.confirmLeave", { name: team.name }),
+                  t("teams.detail.leave"),
+                  t("teams.detail.cancel"),
+                  () =>
+                    leave.mutate(
+                      { p_team: team.id },
+                      { onSuccess: () => router.replace("/teams") },
+                    ),
+                )
+              }
+            />
+          ) : null}
         </>
-      ) : null}
-
-      {isOwner ? (
-        <Button
-          variant="danger"
-          label={t("teams.detail.delete")}
-          icon={<Trash2 size={16} color={c.danger} />}
-          loading={remove.isPending}
-          onPress={() =>
-            confirm(
-              t("teams.detail.confirmDelete", { name: team.name }),
-              t("teams.detail.delete"),
-              t("teams.detail.cancel"),
-              () =>
-                remove.mutate({ p_team: team.id }, { onSuccess: () => router.replace("/teams") }),
-            )
-          }
-        />
-      ) : me ? (
-        <Button
-          variant="danger"
-          label={t("teams.detail.leave")}
-          icon={<LogOut size={16} color={c.danger} />}
-          loading={leave.isPending}
-          onPress={() =>
-            confirm(
-              t("teams.detail.confirmLeave", { name: team.name }),
-              t("teams.detail.leave"),
-              t("teams.detail.cancel"),
-              () =>
-                leave.mutate({ p_team: team.id }, { onSuccess: () => router.replace("/teams") }),
-            )
-          }
-        />
-      ) : null}
+      )}
     </ScrollView>
   );
 }

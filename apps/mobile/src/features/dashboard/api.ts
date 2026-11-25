@@ -1,11 +1,13 @@
 /**
  * Données du tableau de bord : les dépenses d'une période (avec leurs articles)
  * et le budget mensuel du profil. Les règles RLS limitent tout au compte connecté.
+ * Ta part des dépenses de Team validées y est ajoutée.
  */
 import type { InsightPurchase } from "@ra/insights";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/features/auth/session-provider";
 import type { SavedItem } from "@/features/purchases/api";
+import { fetchTeamShares, shareAsPurchase } from "@/features/team-shares/api";
 import { supabase } from "@/lib/supabase";
 
 /**
@@ -29,7 +31,8 @@ export function usePurchasesBetween(from: string, to: string) {
         .order("purchased_on", { ascending: true })
         .limit(5000);
       if (error) throw error;
-      return (data ?? []).map((p) => ({
+      const shares = await fetchTeamShares(from, to);
+      const own: InsightPurchase[] = (data ?? []).map((p) => ({
         id: p.id as string,
         merchant: p.merchant as string | null,
         purchasedOn: p.purchased_on as string,
@@ -45,6 +48,10 @@ export function usePurchasesBetween(from: string, to: string) {
             categoryId: i.category_id,
           })),
       }));
+      // Ta part des dépenses de Team validées compte comme une dépense à toi.
+      return [...own, ...shares.map(shareAsPurchase)].sort((a, b) =>
+        a.purchasedOn.localeCompare(b.purchasedOn),
+      );
     },
   });
 }
