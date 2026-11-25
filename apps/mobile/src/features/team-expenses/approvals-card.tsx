@@ -46,6 +46,8 @@ export function ApprovalsCard({
   const dispute = useDisputeExpense();
   const [kind, setKind] = useState<DisputeKind | null>(null);
   const [reason, setReason] = useState("");
+  /** Invité sans e-mail pour qui le créateur conteste (null : pour soi). */
+  const [forMember, setForMember] = useState<string | null>(null);
 
   const required = requiredApprovers(
     expense.paidBy,
@@ -68,12 +70,13 @@ export function ApprovalsCard({
         p_version: expense.version,
         p_kind: kind,
         p_reason: reason.trim(),
-        p_member: null,
+        p_member: forMember,
       },
       {
         onSuccess: () => {
           setKind(null);
           setReason("");
+          setForMember(null);
         },
       },
     );
@@ -135,6 +138,16 @@ export function ApprovalsCard({
                 }
               />
             ) : null}
+            {active && isOwner && guestWithoutEmail && !refused ? (
+              <Button
+                variant="ghost"
+                label={t("approvals.disputeFor", { name: nameOf(id) })}
+                onPress={() => {
+                  setForMember(id);
+                  setKind("error");
+                }}
+              />
+            ) : null}
           </View>
         );
       })}
@@ -157,7 +170,48 @@ export function ApprovalsCard({
 
       {error ? <Notice tone="error" text={expenseErrorMessage(error, t)} /> : null}
 
-      {active && iAmRequired ? (
+      {active && forMember && kind ? (
+        <View style={s.form}>
+          <Text style={s.name}>{t("approvals.disputeForTitle", { name: nameOf(forMember) })}</Text>
+          <View style={s.actions}>
+            {(["refuse", "error", "correction"] as const).map((k) => (
+              <Button
+                key={k}
+                variant={kind === k ? "secondary" : "ghost"}
+                label={t(`approvals.send.${k}`)}
+                onPress={() => setKind(k)}
+              />
+            ))}
+          </View>
+          <Field
+            label={
+              kind === "refuse" ? t("approvals.reasonOptional") : t("approvals.reasonRequired")
+            }
+            value={reason}
+            onChangeText={setReason}
+            placeholder={t(`approvals.placeholder.${kind}`)}
+            maxLength={500}
+            multiline
+          />
+          <Button
+            variant="danger"
+            label={t(`approvals.send.${kind}`)}
+            loading={dispute.isPending}
+            disabled={kind !== "refuse" && !reason.trim()}
+            onPress={sendDispute}
+          />
+          <Button
+            variant="ghost"
+            label={t("teams.detail.cancel")}
+            onPress={() => {
+              setKind(null);
+              setForMember(null);
+            }}
+          />
+        </View>
+      ) : null}
+
+      {active && iAmRequired && !forMember ? (
         kind ? (
           <View style={s.form}>
             <Field

@@ -295,6 +295,8 @@ export const en: Messages = {
       submit: "Save expense",
     },
     edit: "Correct",
+    formerMember:
+      "{{name}} left the Team: their {{amount}} share can no longer be assigned to them. Split it among the current participants.",
     editHint:
       "Your correction creates a new version: the old one stays in the history and everyone will need to approve again.",
     saveChanges: "Save correction",
@@ -341,6 +343,8 @@ export const en: Messages = {
     refused: "Disputes it",
     waiting: "Waiting for approval",
     waitingEmail: "Will approve through an email link",
+    disputeFor: "Dispute for {{name}}",
+    disputeForTitle: "Dispute on behalf of {{name}}",
     approveFor: "Approve for {{name}}",
     approve: "I approve",
     refuse: "I didn't take part",

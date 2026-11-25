@@ -297,6 +297,8 @@ export const fr = {
       submit: "Enregistrer la dépense",
     },
     edit: "Corriger",
+    formerMember:
+      "{{name}} a quitté la Team : sa part de {{amount}} ne peut plus lui être attribuée. Répartis-la entre les participants actuels.",
     editHint:
       "Ta correction crée une nouvelle version : l'ancienne reste dans l'historique et chacun devra valider à nouveau.",
     saveChanges: "Enregistrer la correction",
@@ -346,6 +348,8 @@ export const fr = {
     refused: "Conteste",
     waiting: "En attente de validation",
     waitingEmail: "Validera par un lien reçu par e-mail",
+    disputeFor: "Contester pour {{name}}",
+    disputeForTitle: "Contester au nom de {{name}}",
     approveFor: "Valider pour {{name}}",
     approve: "Je valide",
     refuse: "Je refuse ma participation",

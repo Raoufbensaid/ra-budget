@@ -73,11 +73,26 @@ export default function TeamExpenseScreen() {
     yesterday: t("expense.yesterday"),
   });
 
+  // Bénéficiaires qui ont quitté la Team : on ne peut plus leur attribuer une part.
+  const gone = expense.beneficiaries.filter(
+    (b) => team.data?.members.find((m) => m.id === b.memberId)?.status !== "active",
+  );
+
   if (editing) {
     return (
       <ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled">
         <Stack.Screen options={{ title: t("teamExpenses.edit") }} />
         <Notice text={t("teamExpenses.editHint")} />
+        {gone.map((b) => (
+          <Notice
+            key={b.memberId}
+            tone="error"
+            text={t("teamExpenses.formerMember", {
+              name: team.data?.members.find((m) => m.id === b.memberId)?.displayName ?? "—",
+              amount: formatCents(b.shareCents, language),
+            })}
+          />
+        ))}
         <ExpenseForm
           members={team.data.members.filter((m) => m.status === "active")}
           myMemberId={me?.id}
