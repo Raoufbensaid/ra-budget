@@ -201,6 +201,9 @@ select pg_temp.expect_error(format('select public.declare_repayment(%L, 100)', c
 reset role;
 select pg_temp.login('a');
 set local role authenticated;
+-- Après le début de la clôture, le créateur ne peut plus modifier un invité
+-- (sinon il pourrait effacer son e-mail pour confirmer à sa place).
+select pg_temp.expect_error(format('select public.update_guest(%L, %L, null)', current_setting('t.eve'), 'Eve'), 'team_locked');
 select public.declare_repayment(pg_temp.v('t.r1'), 10000, pg_temp.v('t.dana'));
 do $$ begin
   if (select status || ':' || confirmed_cents from public.repayments where id = pg_temp.v('t.r1')) <> 'declared:0' then
