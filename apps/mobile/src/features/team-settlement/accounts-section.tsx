@@ -36,6 +36,7 @@ import {
   useLatestSettlement,
   useRequestSettlement,
 } from "./api";
+import { TeamDashboard } from "./team-dashboard";
 
 const money = (cents: number) => formatCents(cents, language);
 
@@ -213,7 +214,6 @@ function LiveAccounts({
   const list = expenses.data ?? [];
   const validated = list.filter((e) => e.status === "validated");
   const open = list.filter((e) => e.status === "pending" || e.status === "disputed").length;
-  const total = validated.reduce((sum, e) => sum + e.totalCents, 0);
   const memberIds = team.members
     .filter(
       (m) =>
@@ -254,13 +254,9 @@ function LiveAccounts({
           })}
         />
       ) : null}
-      <Card title={t("settlement.dashboard")}>
-        <Line label={t("settlement.totalValidated")} value={money(total)} strong />
-        <Line
-          label={t("settlement.expenseCount")}
-          value={t("settlement.expenseCountValue", { count: validated.length })}
-        />
-        {open > 0 ? <Line label={t("settlement.openCount")} value={String(open)} /> : null}
+      <TeamDashboard expenses={list} memberIds={memberIds} nameOf={nameOf} meId={me?.id} />
+
+      <Card title={t("settlement.balancesTitle")}>
         {mine ? (
           <View style={s.mine}>
             <Text style={s.lineLabel}>{t("settlement.myBalance")}</Text>
@@ -270,7 +266,7 @@ function LiveAccounts({
         <Text style={s.hint}>{t("settlement.liveHint")}</Text>
       </Card>
 
-      <Card title={t("settlement.balancesTitle")}>
+      <Card title={t("settlement.balancesDetail")}>
         <BalancesTable rows={balances} nameOf={nameOf} meId={me?.id} />
       </Card>
 
@@ -777,10 +773,37 @@ export function AccountsSection({ team, me }: { team: Team; me: TeamMember | und
       <Card title={t("settlement.balancesTitle")}>
         <BalancesTable rows={settlement.balances} nameOf={nameOf} meId={me?.id} />
       </Card>
+      <FrozenDashboard team={team} settlement={settlement} nameOf={nameOf} meId={me?.id} />
       <Card title={t("settlement.detailTitle")}>
         <FrozenExpenses team={team} settlement={settlement} nameOf={nameOf} meId={me?.id} />
       </Card>
     </View>
+  );
+}
+
+/** Tableau de bord d'une Team en remboursement ou soldée (dépenses du bilan). */
+function FrozenDashboard({
+  team,
+  settlement,
+  nameOf,
+  meId,
+}: {
+  team: Team;
+  settlement: Settlement;
+  nameOf: (id: string) => string;
+  meId?: string;
+}) {
+  const c = useTheme();
+  const expenses = useTeamExpenses(team.id);
+  if (expenses.isPending) return <ActivityIndicator color={c.accent} />;
+  const ids = new Set(settlement.expenseIds);
+  return (
+    <TeamDashboard
+      expenses={(expenses.data ?? []).filter((e) => ids.has(e.id))}
+      memberIds={settlement.balances.map((b) => b.memberId)}
+      nameOf={nameOf}
+      meId={meId}
+    />
   );
 }
 

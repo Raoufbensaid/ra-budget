@@ -5,12 +5,15 @@ import {
   buildShares,
   canConfirm,
   computeBalances,
+  type DashboardExpense,
   planRepayments,
   repaymentProgress,
   requiredApprovers,
   splitEqual,
+  summarizeTeam,
   type TeamExpense,
   type Transfer,
+  teamMonths,
   validateShares,
 } from "../src";
 
@@ -264,5 +267,60 @@ describe("validations", () => {
         ],
       ).status,
     ).toBe("validated");
+  });
+});
+
+describe("tableau de bord de la Team", () => {
+  const row = (
+    paidBy: string,
+    totalCents: number,
+    beneficiaries: string[],
+    spentOn: string,
+    extra: Partial<DashboardExpense> = {},
+  ): DashboardExpense => ({
+    ...expense(paidBy, totalCents, beneficiaries),
+    spentOn,
+    categoryId: "alimentation",
+    hasReceipt: false,
+    ...extra,
+  });
+  const list: DashboardExpense[] = [
+    row("A", 3000, ["A", "B"], "2026-10-30", { hasReceipt: true }),
+    row("B", 1200, ["A", "B", "C"], "2026-11-02", { categoryId: "transport" }),
+    row("C", 900, ["C"], "2026-11-05", { status: "pending" }),
+    row("A", 500, ["A", "B"], "2026-11-06", { status: "disputed", hasReceipt: true }),
+    row("A", 700, ["A"], "2026-11-07", { status: "cancelled", hasReceipt: true }),
+  ];
+
+  it("résume toute la Team quand aucune période n'est choisie", () => {
+    const s = summarizeTeam(list, ["A", "B", "C"], {});
+    expect(s.totalCents).toBe(4200);
+    expect(s.counts).toEqual({ validated: 2, pending: 1, disputed: 1 });
+    expect(s.receipts).toBe(2);
+    expect(s.byMember).toEqual([
+      { memberId: "A", paidCents: 3000, shareCents: 1900 },
+      { memberId: "B", paidCents: 1200, shareCents: 1900 },
+      { memberId: "C", paidCents: 0, shareCents: 400 },
+    ]);
+    expect(s.byCategory).toEqual([
+      { categoryId: "alimentation", cents: 3000 },
+      { categoryId: "transport", cents: 1200 },
+    ]);
+  });
+
+  it("limite le résumé à une période (dates incluses)", () => {
+    const s = summarizeTeam(list, ["A", "B", "C"], { from: "2026-11-01", to: "2026-11-30" });
+    expect(s.totalCents).toBe(1200);
+    expect(s.counts).toEqual({ validated: 1, pending: 1, disputed: 1 });
+    expect(s.receipts).toBe(1);
+    expect(s.byMember.find((m) => m.memberId === "A")).toEqual({
+      memberId: "A",
+      paidCents: 0,
+      shareCents: 400,
+    });
+  });
+
+  it("liste les mois qui ont des dépenses, du plus récent au plus ancien", () => {
+    expect(teamMonths(list)).toEqual(["2026-11", "2026-10"]);
   });
 });
