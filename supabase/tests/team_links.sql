@@ -270,6 +270,19 @@ do $$ begin
     raise exception '10 : l''invitation de B doit partir';
   end if;
 end $$;
+-- Plafond par adresse, tous expéditeurs confondus : 40 e-mails par jour.
+insert into public.email_outbox (to_email, kind, payload)
+select 'victime@test.local', 'approval_requested', '{}'::jsonb from generate_series(1, 40);
+select pg_temp.login('b');
+set local role authenticated;
+select public.invite_member(public.create_team('Encore', '🎯'), 'victime@test.local');
+reset role;
+do $$ begin
+  if (select count(*) from public.email_outbox where to_email = 'victime@test.local') <> 40 then
+    raise exception '10 : plafond de 40 e-mails par jour pour une adresse attendu';
+  end if;
+end $$;
+
 -- ── 11. File d'envoi : réservée au serveur, lien effacé après l'envoi ──
 set local role service_role;
 do $$

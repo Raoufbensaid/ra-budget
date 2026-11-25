@@ -534,6 +534,62 @@ export const fr = {
       "Pas de panique : on garde un œil dessus avec ton budget.",
     ],
   },
+  links: {
+    brand: "RA BUDGET",
+    unavailable: "Lien indisponible",
+    loadError: "Impossible d'ouvrir ce lien. Vérifie ta connexion, puis réessaie.",
+    retry: "Réessayer",
+    state: {
+      invalid: "Ce lien n'est pas valable. Vérifie qu'il a été copié en entier.",
+      revoked: "Ce lien a été remplacé par un plus récent : utilise celui du dernier e-mail reçu.",
+      closed: "Ce lien n'est plus utilisable.",
+      used: "Tu as déjà répondu avec ce lien. Merci !",
+      stale: "La dépense a été corrigée depuis : un nouveau lien t'a été envoyé par e-mail.",
+      expired: "Ce lien a expiré : il est valable 7 jours.",
+    },
+    resend: "Recevoir un nouveau lien",
+    resent: "C'est parti : un nouveau lien arrive dans ta boîte e-mail.",
+    tooSoon:
+      "Un nouveau lien a déjà été envoyé récemment. Regarde tes e-mails, y compris les indésirables.",
+    expense: {
+      title: "Dépense de la Team « {{team}} »",
+      hello: "Bonjour {{name}},",
+      intro:
+        "une dépense de la Team « {{team}} » te concerne. Vérifie-la, puis valide-la ou signale un problème.",
+      myShare: "Ta part",
+      me: "{{name}} (toi)",
+      oneUse:
+        "Ce lien ne sert qu'une fois. Si la dépense est corrigée, tu recevras un nouveau lien.",
+      closed:
+        "Ce lien n'est plus utilisable : la dépense a été annulée, la Team est en clôture, ou tu n'en fais plus partie.",
+      done: {
+        approve: "Merci, c'est validé !",
+        dispute: "Merci, c'est transmis !",
+      },
+      doneHint: "Ta réponse est enregistrée et la Team est prévenue. Tu peux fermer cette page.",
+    },
+    invite: {
+      title: "Invitation dans la Team « {{team}} »",
+      from: "{{name}} t'invite à partager les dépenses de cette Team sur Ra Budget.",
+      fromUnknown: "Tu es invité·e à partager les dépenses de cette Team sur Ra Budget.",
+      howTo:
+        "Connecte-toi avec l'adresse {{email}}, puis ouvre l'onglet Teams pour accepter ou refuser.",
+      signIn: "Me connecter",
+      open: "Voir mes invitations",
+      closed: "Cette invitation n'est plus valable : elle a déjà été acceptée, refusée ou annulée.",
+    },
+    errors: {
+      link_used: "Tu as déjà répondu avec ce lien.",
+      link_revoked: "Ce lien a été remplacé par un plus récent : regarde le dernier e-mail reçu.",
+      link_expired: "Ce lien a expiré. Recharge la page pour en demander un nouveau.",
+      link_stale: "La dépense vient d'être corrigée : un nouveau lien t'a été envoyé.",
+      link_closed: "Ce lien n'est plus utilisable.",
+      link_invalid: "Ce lien n'est pas valable.",
+      stale_version: "La dépense vient d'être corrigée : un nouveau lien t'a été envoyé.",
+      reason_required: "Explique en quelques mots ce qui ne va pas.",
+      generic: "Une erreur est survenue. Réessaie dans un instant.",
+    },
+  },
   done: {
     title: "Dépense enregistrée",
     subtitle: "{{count}} articles · {{total}}",

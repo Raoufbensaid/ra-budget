@@ -33,6 +33,9 @@ function RootNavigator() {
       <Stack.Protected guard={session === null}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
+      {/* Pages des liens reçus par e-mail : ouvertes avec ou sans connexion. */}
+      <Stack.Screen name="t/[token]" />
+      <Stack.Screen name="invite/[token]" />
     </Stack>
   );
 }
