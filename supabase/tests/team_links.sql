@@ -90,7 +90,7 @@ reset role;
 select set_config('test.t1', pg_temp.last_token('eve@test.local', 'approve_expense'), true);
 do $$ begin
   if current_setting('test.t1', true) is null then raise exception '2 : lien pour Eve attendu'; end if;
-  if (select count(*) from public.email_outbox where kind = 'approve_expense') <> 1 then
+  if (select count(*) from public.email_outbox where kind = 'approve_expense' and team_id = current_setting('test.team')::uuid) <> 1 then
     raise exception '2 : un seul e-mail de validation attendu (Dana n''a pas d''e-mail)';
   end if;
   if exists (select 1 from public.email_outbox where to_email = 'a@test.local') then
