@@ -242,11 +242,11 @@ select pg_temp.login('a');
 set local role authenticated;
 select set_config('test.team2', public.create_team('Spam', '📣')::text, true);
 do $$ begin
-  for i in 1..25 loop
-    perform public.invite_member(current_setting('test.team2')::uuid, format('x%s@test.local', i));
-  end loop;
   for i in 1..12 loop
     perform public.cancel_invitation(public.invite_member(current_setting('test.team2')::uuid, 'cible@test.local'));
+  end loop;
+  for i in 1..25 loop
+    perform public.invite_member(current_setting('test.team2')::uuid, format('x%s@test.local', i));
   end loop;
 end $$;
 reset role;
@@ -255,8 +255,19 @@ do $$ begin
       and sender_user = '00000000-0000-4000-a000-00000000000a') > 20 then
     raise exception '10 : 20 invitations par jour au plus attendues';
   end if;
-  if (select count(*) from public.email_outbox where to_email = 'cible@test.local') > 10 then
-    raise exception '10 : 10 e-mails par jour au plus pour une adresse attendus';
+  if (select count(*) from public.email_outbox where to_email = 'cible@test.local') > 3 then
+    raise exception '10 : 3 invitations par jour au plus vers une adresse depuis une personne attendues';
+  end if;
+end $$;
+-- A ne peut pas empêcher B d'inviter la même adresse.
+select pg_temp.login('b');
+set local role authenticated;
+select public.invite_member(public.create_team('Autre', '🏠'), 'cible@test.local');
+reset role;
+do $$ begin
+  if not exists (select 1 from public.email_outbox where to_email = 'cible@test.local'
+                 and sender_user = '00000000-0000-4000-a000-00000000000b') then
+    raise exception '10 : l''invitation de B doit partir';
   end if;
 end $$;
 -- ── 11. File d'envoi : réservée au serveur, lien effacé après l'envoi ──
