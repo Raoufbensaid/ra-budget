@@ -12,7 +12,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui";
+import { useSession } from "@/features/auth/session-provider";
 import {
   purchaseTotal,
   type SavedPurchase,
@@ -144,7 +146,7 @@ function TeamShareCard({ share }: { share: TeamShare }) {
   );
 }
 
-export default function HistoryScreen() {
+function HistoryScreenContent() {
   const { t } = useTranslation();
   const c = useTheme();
   const s = styles(c);
@@ -301,3 +303,9 @@ const styles = (c: Palette) =>
     itemName: { color: c.text, fontSize: font.small },
     itemPrice: { color: c.text, fontSize: font.small, fontVariant: ["tabular-nums"] },
   });
+
+/** Sans compte : invitation à se connecter. */
+export default function HistoryScreen() {
+  const { session } = useSession();
+  return session ? <HistoryScreenContent /> : <SignInPrompt />;
+}

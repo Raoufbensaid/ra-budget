@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button, Field, Notice } from "@/components/ui";
 import { authErrorMessage } from "@/features/auth/auth-errors";
 import { useSession } from "@/features/auth/session-provider";
@@ -10,7 +11,7 @@ import { DisplayNameCard } from "@/features/profile/display-name-card";
 import { supabase } from "@/lib/supabase";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
 
-export default function ProfileScreen() {
+function ProfileScreenContent() {
   const { t } = useTranslation();
   const c = useTheme();
   const s = styles(c);
@@ -133,3 +134,9 @@ const styles = (c: Palette) =>
     email: { color: c.text, fontSize: font.body, fontWeight: "600" },
     hint: { color: c.textMuted, fontSize: font.tiny, marginTop: -space.xs },
   });
+
+/** Sans compte : invitation à se connecter. */
+export default function ProfileScreen() {
+  const { session } = useSession();
+  return session ? <ProfileScreenContent /> : <SignInPrompt />;
+}

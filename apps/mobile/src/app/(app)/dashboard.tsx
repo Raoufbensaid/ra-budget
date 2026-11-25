@@ -21,7 +21,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui";
+import { useSession } from "@/features/auth/session-provider";
 import { usePurchasesBetween } from "@/features/dashboard/api";
 import { BudgetCard } from "@/features/dashboard/budget-card";
 import { CategoryCard } from "@/features/dashboard/category-card";
@@ -34,7 +36,7 @@ import { font, type Palette, radius, space, useTheme } from "@/theme";
 
 const TREND_MONTHS = 6;
 
-export default function DashboardScreen() {
+function DashboardScreenContent() {
   const { t } = useTranslation();
   const c = useTheme();
   const s = styles(c);
@@ -184,3 +186,9 @@ const styles = (c: Palette) =>
     },
     emptyTitle: { color: c.text, fontSize: font.body, fontWeight: "600" },
   });
+
+/** Sans compte : invitation à se connecter. */
+export default function DashboardScreen() {
+  const { session } = useSession();
+  return session ? <DashboardScreenContent /> : <SignInPrompt />;
+}

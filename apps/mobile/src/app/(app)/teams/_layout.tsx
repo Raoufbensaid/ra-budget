@@ -1,8 +1,10 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { SignInPrompt } from "@/components/sign-in-prompt";
+import { useSession } from "@/features/auth/session-provider";
 import { useTheme } from "@/theme";
 
-export default function TeamsLayout() {
+function TeamsLayoutContent() {
   const { t } = useTranslation();
   const c = useTheme();
   return (
@@ -24,4 +26,10 @@ export default function TeamsLayout() {
       <Stack.Screen name="[id]/expenses/[expenseId]" options={{ title: "" }} />
     </Stack>
   );
+}
+
+/** Sans compte : invitation à se connecter. */
+export default function TeamsLayout() {
+  const { session } = useSession();
+  return session ? <TeamsLayoutContent /> : <SignInPrompt />;
 }

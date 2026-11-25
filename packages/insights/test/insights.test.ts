@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   allocatePurchase,
   budgetStatus,
+  categoryTotals,
   compareToPrevious,
   daysInMonth,
   distribute,
@@ -205,5 +206,26 @@ describe("budget", () => {
 
   it("ne donne pas de reste par jour pour un mois terminé", () => {
     expect(budgetStatus(60000, 30000, "2026-10", "2026-11-10").perDayLeftCents).toBeNull();
+  });
+});
+
+describe("categoryTotals", () => {
+  it("regroupe des dépenses de dates différentes, sans filtre de mois", () => {
+    const list = [
+      purchase("2026-10-31", [item("pain", 300), item("savon", 200, "hygiene_beaute")]),
+      purchase("2026-11-02", [item("lait", 100)]),
+      purchase("2026-11-02", [], 700),
+    ];
+    const totals = categoryTotals(list);
+    expect(totals.map((c) => [c.category, c.cents])).toEqual([
+      ["unclassified", 700],
+      ["alimentation", 400],
+      ["hygiene_beaute", 200],
+    ]);
+    expect(totals.reduce((s, c) => s + c.share, 0)).toBeCloseTo(1);
+  });
+
+  it("renvoie une liste vide sans dépense", () => {
+    expect(categoryTotals([])).toEqual([]);
   });
 });

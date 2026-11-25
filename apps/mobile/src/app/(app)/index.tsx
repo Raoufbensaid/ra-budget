@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { Undo2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,13 +10,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSession } from "@/features/auth/session-provider";
 import { CartPanel } from "@/features/expense/cart-panel";
 import { ChatList } from "@/features/expense/chat-list";
 import { Composer } from "@/features/expense/composer";
+import { GuestSummary } from "@/features/expense/guest-summary";
 import { SuccessView } from "@/features/expense/success-view";
 import { useExpenseChat } from "@/features/expense/use-expense-chat";
 import { language } from "@/i18n";
 import { formatDate, isoDate } from "@/lib/format";
+import { guestChosen } from "@/lib/guest";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
 
 /** Au-delà de cette largeur, le panier s'affiche à côté de la conversation. */
@@ -28,8 +31,20 @@ export default function AddExpenseScreen() {
   const s = styles(c);
   const { width } = useWindowDimensions();
   const wide = width >= WIDE;
-  const chat = useExpenseChat();
+  const guest = useSession().session === null;
+  const chat = useExpenseChat({ guest });
   const { cart } = chat.conv;
+
+  // Sans compte et sans avoir choisi « Continuer sans compte » : connexion d'abord.
+  if (guest && !guestChosen()) return <Redirect href="/sign-in" />;
+
+  if (chat.lastSaved && guest) {
+    return (
+      <SafeAreaView style={s.screen}>
+        <GuestSummary drafts={chat.saved} onAgain={chat.restart} />
+      </SafeAreaView>
+    );
+  }
 
   if (chat.lastSaved) {
     return (
@@ -72,6 +87,11 @@ export default function AddExpenseScreen() {
             <View style={s.flex}>
               <Text style={s.brand}>Ra Budget</Text>
               <Text style={s.title}>{t("expense.title")}</Text>
+              {guest ? (
+                <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="link">
+                  <Text style={s.guest}>{t("guest.banner")}</Text>
+                </Pressable>
+              ) : null}
             </View>
             <Pressable
               onPress={chat.undoLast}
@@ -126,6 +146,7 @@ export default function AddExpenseScreen() {
 
 const styles = (c: Palette) =>
   StyleSheet.create({
+    guest: { color: c.warning, fontSize: font.tiny, fontWeight: "600", marginTop: 2 },
     screen: { flex: 1, backgroundColor: c.background },
     flex: { flex: 1 },
     frame: { flex: 1, width: "100%", alignSelf: "center" },

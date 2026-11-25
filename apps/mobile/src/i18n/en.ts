@@ -701,6 +701,28 @@ export const en: Messages = {
     open: "Pick the date in the calendar",
     choose: "Choose this date",
   },
+  guest: {
+    continue: "Continue without an account",
+    continueHint:
+      "Without an account you can record expenses and see their summary, but nothing is saved.",
+    banner: "No account: nothing is saved. Create an account to keep everything.",
+    summaryTitle: "Your session summary",
+    summaryCount_one: "{{count}} expense added",
+    summaryCount_other: "{{count}} expenses added",
+    notSaved:
+      "Without an account these expenses aren't saved: they disappear when you close the app.",
+    listTitle: "Your expenses",
+    createAccount: "Create an account to keep everything",
+    promptTitle: "Create an account or sign in",
+    promptText: "This part needs a free account to keep your data.",
+    benefits: {
+      history: "Find all your expenses in History",
+      dashboard: "Follow your monthly budget in Summary",
+      teams: "Share expenses with friends and family in Teams",
+    },
+    signIn: "Create an account or sign in",
+    keepGoing: "Continue without an account",
+  },
   done: {
     title: "Expense saved",
     subtitle: "{{count}} items · {{total}}",

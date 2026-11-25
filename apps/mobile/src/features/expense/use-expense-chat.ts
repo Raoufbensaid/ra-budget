@@ -146,7 +146,11 @@ let messageCounter = 0;
 /** Identifiant unique, même après un rechargement du module (le compteur repart alors à 0). */
 const nextId = () => `m${Date.now().toString(36)}-${++messageCounter}`;
 
-export function useExpenseChat() {
+/**
+ * `guest` : sans compte, une dépense validée reste en mémoire (rien n'est
+ * envoyé en base) et s'ajoute au résumé de la session.
+ */
+export function useExpenseChat({ guest = false }: { guest?: boolean } = {}) {
   const { t } = useTranslation();
   const [conv, setConv] = useState<Conversation>(createConversation);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
@@ -218,13 +222,18 @@ export function useExpenseChat() {
       source: usedVoice.current ? "voice" : "text",
       today: isoDate(new Date()),
     });
+    if (guest) {
+      setSaved((s) => [...s, draft]);
+      setLastSaved(draft);
+      return;
+    }
     save.mutate(draft, {
       onSuccess: () => {
         setSaved((s) => [...s, draft]);
         setLastSaved(draft);
       },
     });
-  }, [conv, save]);
+  }, [conv, save, guest]);
 
   const restart = useCallback(() => {
     usedVoice.current = false;

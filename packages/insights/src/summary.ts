@@ -49,15 +49,14 @@ function productKey(item: AllocatedItem["item"]): string {
   return (item.name ?? item.rawLabel).trim().toLocaleLowerCase("fr");
 }
 
-export function summarizeMonth(
-  purchases: InsightPurchase[],
-  month: MonthKey,
-  today: string,
-): MonthSummary {
-  const list = inMonth(purchases, month);
+/**
+ * Totaux par catégorie d'une liste de dépenses (toutes dates confondues), du
+ * plus gros au plus petit. Les dépenses sans article comptent en « non classé ».
+ */
+export function categoryTotals(purchases: InsightPurchase[]): CategoryTotal[] {
+  const list = purchases;
   const allocated = list.flatMap(allocatePurchase);
   const totalCents = list.reduce((s, p) => s + purchaseTotal(p), 0);
-
   const byKey = new Map<CategoryKey, AllocatedItem[]>();
   for (const a of allocated) byKey.set(a.category, [...(byKey.get(a.category) ?? []), a]);
   // Dépenses sans article (cas rare) : comptées comme « non classé ».
@@ -84,6 +83,19 @@ export function summarizeMonth(
     });
   }
   byCategory.sort((a, b) => b.cents - a.cents);
+  return byCategory;
+}
+
+export function summarizeMonth(
+  purchases: InsightPurchase[],
+  month: MonthKey,
+  today: string,
+): MonthSummary {
+  const list = inMonth(purchases, month);
+  const allocated = list.flatMap(allocatePurchase);
+  const totalCents = list.reduce((s, p) => s + purchaseTotal(p), 0);
+
+  const byCategory = categoryTotals(list);
 
   const products = new Map<string, TopProduct>();
   for (const a of allocated) {

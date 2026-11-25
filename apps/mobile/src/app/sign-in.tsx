@@ -2,12 +2,14 @@
  * Connexion : par code reçu par e-mail (sans mot de passe) ou par mot de passe.
  * Les codes à 6 chiffres fonctionnent partout (Expo Go, web), contrairement aux liens.
  */
+import { router } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Field, Notice } from "@/components/ui";
 import { authErrorMessage, isEmailNotConfirmed } from "@/features/auth/auth-errors";
+import { chooseGuest } from "@/lib/guest";
 import { supabase, supabaseConfigured } from "@/lib/supabase";
 import { font, type Palette, radius, space, useTheme } from "@/theme";
 
@@ -249,6 +251,15 @@ export default function SignInScreen() {
                 )}
               </View>
             )}
+            <Button
+              variant="ghost"
+              label={t("guest.continue")}
+              onPress={() => {
+                chooseGuest();
+                router.replace("/");
+              }}
+            />
+            <Text style={s.guestHint}>{t("guest.continueHint")}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -258,6 +269,12 @@ export default function SignInScreen() {
 
 const styles = (c: Palette) =>
   StyleSheet.create({
+    guestHint: {
+      color: c.textMuted,
+      fontSize: font.tiny,
+      textAlign: "center",
+      marginTop: -space.xs,
+    },
     screen: { flex: 1, backgroundColor: c.background },
     flex: { flex: 1 },
     page: { flexGrow: 1, justifyContent: "center", padding: space.lg },

@@ -737,6 +737,28 @@ export const fr = {
     open: "Choisir la date dans le calendrier",
     choose: "Choisir cette date",
   },
+  guest: {
+    continue: "Continuer sans compte",
+    continueHint:
+      "Sans compte, tu peux noter tes dépenses et voir leur résumé, mais rien n'est enregistré.",
+    banner: "Sans compte : rien n'est enregistré. Crée un compte pour tout garder.",
+    summaryTitle: "Résumé de ta session",
+    summaryCount_one: "{{count}} dépense ajoutée",
+    summaryCount_other: "{{count}} dépenses ajoutées",
+    notSaved:
+      "Sans compte, ces dépenses ne sont pas enregistrées : elles disparaissent quand tu fermes l'application.",
+    listTitle: "Tes dépenses",
+    createAccount: "Créer un compte pour tout garder",
+    promptTitle: "Crée un compte ou connecte-toi",
+    promptText: "Cette partie a besoin d'un compte, gratuit, pour garder tes données.",
+    benefits: {
+      history: "Retrouver toutes tes dépenses dans l'Historique",
+      dashboard: "Suivre ton budget du mois dans le Bilan",
+      teams: "Partager des dépenses avec tes proches dans les Teams",
+    },
+    signIn: "Créer un compte ou me connecter",
+    keepGoing: "Continuer sans compte",
+  },
   done: {
     title: "Dépense enregistrée",
     subtitle: "{{count}} articles · {{total}}",

@@ -14,7 +14,7 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 });
 
-/** Les écrans de l'app ne sont accessibles qu'une fois connecté. */
+/** Navigation : connexion, application (en partie sans compte) et pages des liens. */
 function RootNavigator() {
   const c = useTheme();
   const { session, loading } = useSession();
@@ -27,12 +27,12 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.background } }}>
-      <Stack.Protected guard={session !== null}>
-        <Stack.Screen name="(app)" />
-      </Stack.Protected>
+      {/* Sans compte, on arrive sur la connexion ; « Continuer sans compte »
+          ouvre l'app, où seuls l'ajout et son résumé marchent sans connexion. */}
       <Stack.Protected guard={session === null}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
+      <Stack.Screen name="(app)" />
       {/* Pages des liens reçus par e-mail : ouvertes avec ou sans connexion. */}
       <Stack.Screen name="t/[token]" />
       <Stack.Screen name="invite/[token]" />
